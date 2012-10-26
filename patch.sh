@@ -1,0 +1,66 @@
+#!/bin/bash
+
+# Smart extract function
+extract () {
+  if [ $# != 1 ];
+  then
+    echo
+    echo "  Usage: extract [COMPRESSED_FILENAME]"
+    echo
+  else
+    if [ -f $1 ];
+    then
+      case $1 in
+        *.tar)       tar -xf  $1  ;;
+        *.tgz)       tar -xzf $1  ;;
+        *.tar.gz)    tar -xzf $1  ;;
+        *.tbz2)      tar -xjf $1  ;;
+        *.tar.bz2)   tar -xjf $1  ;;
+        *.gz)        gunzip    $1  ;;
+        *.bz2)       bunzip2   $1  ;;
+        *.zip)       unzip -qq     $1  ;;
+        *)           echo "  '$1' file type unknown" ;;
+      esac
+    else
+      echo "  '$1' is not a regular file"
+      echo
+    fi
+  fi
+}
+
+#smart compress function
+compress() {
+  if [ $# != 2 ];
+  then
+    echo
+    echo "  Usage: compress [COMPRESSED_FILENAME] [SOURCE_DIRECTORY]"
+    echo
+  else
+    case $1 in
+      *.tar.bz2)    tar -cjPf $1 $2 ;;
+      *.tar.gz)     tar -czPf $1 $2 ;;
+      *.zip)        zip -qr      $1 $2  ;;
+      *)            echo "  '$1' file type unknown" ;;
+    esac
+  fi
+}
+
+
+
+patch_packages="celery protobuf google-breakpad greenlet lxml networkx pyip pyOpenSSL PyXML RelStorage Twisted txAMQP urllib3 Zope2"
+for package in $patch_packages
+do
+   echo $package
+   mkdir patch
+   cd patch
+   cp /home/foo/inst/externallibs/$package* .
+   file=$(ls|grep -v patch)
+   extract $file
+   directory=$(ls -l|grep ^d| ls -l|grep ^d|awk '{print $9}')
+   for patch in $(ls *.patch*); do patch -d $directory -p0 < ${patch}; done
+   rm $file
+   compress $file $directory
+   mv $file ..
+   cd ..
+   rm -r patch
+done
