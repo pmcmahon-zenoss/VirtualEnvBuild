@@ -1,7 +1,11 @@
+
+
 #TODO(per Ian)
 # Incorporate virtualenvwrapper
 #http://www.doughellmann.com/articles/pythonmagazine/completely-different/2008-05-virtualenvwrapper/index.html
 
+#also a todo is wrap this in a fabric script
+# http://hynek.me/articles/python-app-deployment-with-native-packages/
 
 As Root 
 mkdir -p /opt/zenoss/venv
