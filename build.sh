@@ -7,6 +7,9 @@
 #also a todo is wrap this in a fabric script
 # http://hynek.me/articles/python-app-deployment-with-native-packages/
 
+# investigate shovel
+# http://devblog.seomoz.org/2012/03/shovel-rake-for-python/
+
 As Root 
 mkdir -p /opt/zenoss/venv
 #http://rackerhacker.com/2012/01/31/create-a-local-pypi-repository-using-only-mod_rewrite/
