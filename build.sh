@@ -1,3 +1,7 @@
+#TODO(per Ian)
+# Incorporate virtualenvwrapper
+#http://www.doughellmann.com/articles/pythonmagazine/completely-different/2008-05-virtualenvwrapper/index.html
+
 
 As Root 
 mkdir -p /opt/zenoss/venv
