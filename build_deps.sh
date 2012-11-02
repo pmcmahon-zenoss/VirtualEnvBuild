@@ -1,9 +1,13 @@
 ZENHOME=/opt/zenoss
 VIRTUALENV=$ZENHOME/venv
+export ZENHOME
+export VIRTUALENV
 
 sudo mkdir -p $ZENHOME
 sudo chown -R zenoss $ZENHOME
+
 ./python_setup.sh
+
 if [ ! -e $VIRTUALENV/bin/activate ]
 then
     sudo mkdir -p $VIRTUALENV
@@ -12,7 +16,7 @@ then
 fi
 
 #Update the environment
-sed -e 's|PATH="$VIRTUAL_ENV/bin:$PATH"|PATH="$VIRTUAL_ENV/bin:$VIRTUAL_ENV/../bin:$PATH\nZENHOME=$VIRTUAL_ENV\nexport $ZENHOME"|g' $VIRTUALENV/bin/activate
+sed -i -e 's|PATH="$VIRTUAL_ENV/bin:$PATH"|PATH="$VIRTUAL_ENV/bin:$VIRTUAL_ENV/../bin:$PATH\nZENHOME=$VIRTUAL_ENV\nexport $ZENHOME"|g' $VIRTUALENV/bin/activate
 
 source $VIRTUALENV/bin/activate
 
@@ -30,5 +34,5 @@ fi
 
 # The requirements.txt will be unique per branch
 # Install the zope/python dependancies for the app.
-sed -e "s|##PWD##|`pwd`|g" requirements.txt
+sed -i -e "s|##PWD##|`pwd`|g" requirements.txt
 pip install -r requirements.txt
