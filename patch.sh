@@ -62,7 +62,7 @@ do
    for patch in $(ls *.patch*); do patch -d $directory -p0 < ${patch}; done
    rm $file
    compress $file $directory
-   mv $file ..
+   mv $file ../Build
    cd ..
    rm -r patch
 done
