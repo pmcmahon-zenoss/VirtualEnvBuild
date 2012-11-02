@@ -1,7 +1,12 @@
 ZENHOME=/opt/zenoss
 VIRTUALENV=$ZENHOME/venv
+ZOPEUSER=admin
+ZOPEPASSWORD=zenoss
+
 export ZENHOME
 export VIRTUALENV
+
+./build_deps.sh
 
 source $VIRTUALENV/bin/activate
 
@@ -71,8 +76,26 @@ if os.environ.get('ZENHOME'):
     site.addsitedir(os.path.join(os.getenv('ZENHOME'), 'ZenPacks'))
 EOF
 
-# Copy in zenoss.conf files.
+# Copy in conf files.
+
+# zenoss.conf
 sed -e "s;<<INSTANCE_HOME>>;$ZENHOME;g" inst/conf/zenoss.conf.in > $ZENHOME/etc/zenoss.conf
+
+# global.conf
+if [ ! -f $ZENHOME/etc/global.conf ]
+then
+    cp inst/conf/global.conf $ZENHOME/etc/
+fi
+
+cd inst/conf
+for conf in *
+do  
+    if [ ! -f $ZENHOME/etc/$conf.example ]
+    then
+        cp $conf $ZENHOME/etc/$conf.example
+        sed -i -e 's/ZENUSERNAME/$(ZOPEUSER)/' -e 's/ZENPASSWORD/$(ZOPEPASSWORD)/' $ZENHOME/etc/$conf
+    fi
+done
 
 # Copy in the skel files?
 
@@ -106,5 +129,22 @@ LD_LIBRARY_PATH=$ZENHOME/lib mvn clean install
 #Install zep
 ZEPDIST=$(ls -1 `pwd`/dist/target/zep-dist-*.tar.gz)
 (cd $ZENHOME;tar zxvhf $ZEPDIST)
+cd ../../..
 
+#Make zensocket
+cd inst/zensocket
+make
+make install
+cd ../..
 
+#Make pyraw
+# We need to patch this to make it venv aware.
+if [ ! -f inst/icmpecho/venv.patch ]
+then
+    cp patches/venv.patch inst/icmpecho/venv.patch
+    ( cd inst/icmpecho; patch -p0 < venv.patch )
+fi
+
+cd inst/icmpecho
+make
+cd ../../

@@ -118,6 +118,7 @@ file:##PWD##/inst/externallibs/Yapps-2.1.1.tar.gz
 file:##PWD##/inst/externallibs/pynetsnmp-0.30.06.tar.gz
 file:##PWD##/inst/externallibs/petehunt-PyMySQL-fecc4a6.zip
 file:##PWD##/inst/zenoss-version
+file:##PWD##/inst/icmpecho
 file:##PWD##/Build/celery-3.0.9.tar.gz
 file:##PWD##/Build/greenlet-0.3.1.tar.gz
 file:##PWD##/Build/lxml-2.3.tar.gz

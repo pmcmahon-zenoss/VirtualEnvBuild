@@ -1,0 +1,14 @@
+Index: Makefile
+===================================================================
+--- Makefile    (revision 65676)
++++ Makefile    (working copy)
+@@ -1,7 +1,7 @@
+ PROJECT = pyraw
+-OUTPUT  = $(DESTDIR)$(ZENHOME)/bin/$(PROJECT)
+-CFLAGS  = -I$(DESTDIR)$(ZENHOME)/include/python2.7
+-LDFLAGS = -L$(DESTDIR)$(ZENHOME)/lib
++OUTPUT  = $(ZENHOME)/bin/$(PROJECT)
++CFLAGS  = -I$(VIRTUAL_ENV)/include/python2.7
++LDFLAGS = -L$(VIRTUAL_ENV)/lib
+ LDLIBS  = -lpython2.7 -ldl
+ CC     ?= gcc
