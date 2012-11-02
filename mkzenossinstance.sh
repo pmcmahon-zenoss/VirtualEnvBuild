@@ -27,7 +27,7 @@ BN=${0##*/}
 # configure to generate the uplevel mkzenossinstance.sh script.
 #-------------------------------------------------------------------------#
 #
-INSTDIR=/home/zenoss/inst
+INSTDIR=/home/zenoss/VirtualEnvBuild/inst
 RABBITMQ_HOST=localhost
 RABBITMQ_PASS=zenoss
 RABBITMQ_PORT=5672

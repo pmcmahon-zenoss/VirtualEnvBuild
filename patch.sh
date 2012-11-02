@@ -50,6 +50,11 @@ compress() {
 #patch_packages="celery protobuf google-breakpad greenlet lxml networkx pyip pyOpenSSL PyXML RelStorage Twisted txAMQP urllib3 Zope2"
 patch_packages=$(for patch in $(cd `pwd`/inst/externallibs; ls *patch*); do echo ${patch}|perl -ne 'if (m/(.*)-r?\d/g){print "$1\n"}'; done|sort|uniq)
 
+if [ -d patch ]
+then
+   rm -rf patch
+fi
+
 for package in $patch_packages
 do
    echo $package
