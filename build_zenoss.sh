@@ -1,4 +1,7 @@
-./build_deps.sh
+ZENHOME=/opt/zenoss
+VIRTUALENV=$ZENHOME/venv
+export ZENHOME
+export VIRTUALENV
 
 source $VIRTUALENV/bin/activate
 

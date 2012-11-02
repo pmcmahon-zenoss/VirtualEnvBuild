@@ -34,5 +34,6 @@ fi
 
 # The requirements.txt will be unique per branch
 # Install the zope/python dependancies for the app.
-sed -i -e "s|##PWD##|`pwd`|g" requirements.txt
-pip install -r requirements.txt
+cp requirements.txt Build/
+sed -i -e "s|##PWD##|`pwd`|g" Build/requirements.txt
+pip install -r Build/requirements.txt
