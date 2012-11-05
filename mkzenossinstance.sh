@@ -573,5 +573,8 @@ else
 
 EOF
 fi
+cp $ZENHOME/etc/hubpasswd.example $ZENHOME/etc/hubpasswd
+cp $ZENHOME/etc/zeneventserver.conf.example $ZENHOME/etc/zeneventserver.conf
+
 chmod +x $ZENHOME/bin/runzope
 chmod +x $ZENHOME/bin/zopectl
