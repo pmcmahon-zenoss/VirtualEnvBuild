@@ -41,6 +41,7 @@ else
     (cd Build/core && svn up)
 fi
 
+
 # Create some required directories
 mkdir -p $ZENHOME/{backups,export,build,etc}
 
@@ -96,19 +97,21 @@ do
         sed -i -e 's/ZENUSERNAME/$(ZOPEUSER)/' -e 's/ZENPASSWORD/$(ZOPEPASSWORD)/' $ZENHOME/etc/$conf
     fi
 done
+cd ../..
 
 # Copy in the skel files?
-
 # Compile protoc
 if [ ! -e /opt/zenoss/bin/protoc ]
 then
     cd Build
-    tar xvf protobuf*
+    tar xvf protobuf*tar*
     cd protobuf*
     ./configure --prefix=$ZENHOME --enable-shared=yes --enable-static=no
     make
     make install
-    cd ../..
+    cd python/
+    python setup.py install
+    cd ../../..
 fi
 
 # Compile the java pieces
@@ -117,14 +120,14 @@ mvn clean install
 
 # Compile the protocols
 cd ../protocols/
-LD_LIBRARY_PATH=$ZENHOME/lib mvn -f java/pom.xml clean install
-LD_LIBRARY_PATH=$ZENHOME/lib make -C python clean build
+PATH=$ZENHOME/bin/:${PATH} LD_LIBRARY_PATH=$ZENHOME/lib mvn -f java/pom.xml clean install
+PATH=$ZENHOME/bin/:${PATH} LD_LIBRARY_PATH=$ZENHOME/lib make -C python clean build
 cd python/
 python setup.py install
 
 #compile zep
 cd ../../zep
-LD_LIBRARY_PATH=$ZENHOME/lib mvn clean install
+PATH=$ZENHOME/bin/:${PATH} LD_LIBRARY_PATH=$ZENHOME/lib mvn clean install
 
 #Install zep
 ZEPDIST=$(ls -1 `pwd`/dist/target/zep-dist-*.tar.gz)
@@ -148,3 +151,6 @@ fi
 cd inst/icmpecho
 make
 cd ../../
+
+chmod +x $ZENHOME/bin/zdrun
+chmod +x $ZENHOME/bin/zopectl

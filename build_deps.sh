@@ -16,7 +16,7 @@ then
 fi
 
 #Update the environment
-sed -i -e 's|PATH="$VIRTUAL_ENV/bin:$PATH"|PATH="$VIRTUAL_ENV/bin:$VIRTUAL_ENV/../bin:$PATH"\nZENHOME=$VIRTUAL_ENV\nexport ZENHOME|g' $VIRTUALENV/bin/activate
+sed -i -e 's|PATH="$VIRTUAL_ENV/bin:$PATH"|PATH="$VIRTUAL_ENV/../bin:$VIRTUAL_ENV/bin:$PATH"\nZENHOME=/opt/zenoss\nexport ZENHOME|g' $VIRTUALENV/bin/activate
 
 source $VIRTUALENV/bin/activate
 
