@@ -573,3 +573,5 @@ else
 
 EOF
 fi
+chmod +x $ZENHOME/bin/runzope
+chmod +x $ZENHOME/bin/zopectl

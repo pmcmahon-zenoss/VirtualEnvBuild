@@ -152,5 +152,6 @@ cd inst/icmpecho
 make
 cd ../../
 
-chmod +x $ZENHOME/bin/zdrun
-chmod +x $ZENHOME/bin/zopectl
+# fix the python path
+sed -i -e 's|PYTHON=$ZENHOME/bin/python|PYTHON=`which python`|g' $ZENHOME/bin/zenfunctions
+
