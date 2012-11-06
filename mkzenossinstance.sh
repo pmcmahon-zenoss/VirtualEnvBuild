@@ -573,8 +573,15 @@ else
 
 EOF
 fi
-cp $ZENHOME/etc/hubpasswd.example $ZENHOME/etc/hubpasswd
-cp $ZENHOME/etc/zeneventserver.conf.example $ZENHOME/etc/zeneventserver.conf
 
 chmod +x $ZENHOME/bin/runzope
 chmod +x $ZENHOME/bin/zopectl
+
+cd $ZENHOME/etc
+for file in *.example
+do
+    basefile=$(basename $file .example)
+    if [ ! -f $basefile ] ; then \
+        cp $file $basefile
+    fi
+done
