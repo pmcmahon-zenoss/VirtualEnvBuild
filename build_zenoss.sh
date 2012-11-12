@@ -155,3 +155,12 @@ cd ../../
 # fix the python path
 sed -i -e 's|PYTHON=$ZENHOME/bin/python|PYTHON=`which python`|g' $ZENHOME/bin/zenfunctions
 
+
+# Optional build nmap  ... preferrably we do use the system nmap.
+
+tar -C Build -xvf inst/externallibs/nmap-6.01.tgz
+cd Build/nmap-6.01
+./configure --prefix=/opt/zenoss --without-zenmap --without-ndiff
+make
+make install
+cd ../..
