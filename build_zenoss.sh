@@ -5,6 +5,18 @@ ZOPEPASSWORD=zenoss
 LIBSMI_PACKAGE=libsmi-0.4.8.tar.gz
 NMAP_PACKAGE=nmap-6.01.tgz
 
+PATH=/usr/jdk1.6.0_38/bin/:$PATH
+export PATH
+
+# manually install jdk
+# manually install binary maven via install_maven script
+
+
+export M2_HOME=`pwd`/apache-maven-3.0.4
+export M2=$M2_HOME/bin
+export PATH=$M2:$PATH
+export JAVA_HOME=/usr/jdk1.6.0_38
+
 export ZENHOME
 export VIRTUALENV
 
@@ -138,13 +150,16 @@ cd ../../
 sed -i -e 's|PYTHON=$ZENHOME/bin/python|PYTHON=`which python`|g' $ZENHOME/bin/zenfunctions
 
 # build nmap, because we need it in the code and we set it setuid
-tar -C Build -xvf inst/externallibs/$NMAP_PACKAGE
-cd Build/
-cd $(ls -lda nmap*|grep ^drwx|awk '{print $9}')
-./configure --prefix=/opt/zenoss --without-zenmap --without-ndiff
-make
-make install
-cd ../..
+if [ ! -e $ZENHOME/bin/nmap ]
+then
+    tar -C Build -xvf inst/externallibs/$NMAP_PACKAGE
+    cd Build/
+    cd $(ls -lda nmap*|grep ^drwx|awk '{print $9}')
+    ./configure --prefix=/opt/zenoss --without-zenmap --without-ndiff
+    make
+    make install
+    cd ../..
+fi
 
 if [ ! -e $ZENHOME/share/mibs/site ]
 then
@@ -159,23 +174,27 @@ then
     cp inst/mibs/* $ZENHOME/share/mibs/site
 fi
 
+
 # Install libsmi
-rm -rf Build/libsmi*
-cp inst/externallibs/$LIBSMI_PACKAGE Build/ 
-cd Build
-tar xvf $LIBSMI_PACKAGE
-cd $(ls -lda libsmi*|grep ^drwx|awk '{print $9}')
-./configure --prefix=$ZENHOME
-make
-make install
-cd ../..
+if [ ! -e $ZENHOME/bin/smidump ]
+then
+    rm -rf Build/libsmi*
+    cp inst/externallibs/$LIBSMI_PACKAGE Build/ 
+    cd Build
+    tar xvf $LIBSMI_PACKAGE
+    cd $(ls -lda libsmi*|grep ^drwx|awk '{print $9}')
+    ./configure --prefix=$ZENHOME
+    make
+    make install
+    cd ../..
+fi
 
 
 ##### mvn/oracle dependancies below ####
 # Compile the java pieces
 cd Build/core/java/
 mvn clean install
-
+pwd
 # Compile the protocols
 cd ../protocols/
 PATH=$ZENHOME/bin/:${PATH} LD_LIBRARY_PATH=$ZENHOME/lib mvn -f java/pom.xml clean install

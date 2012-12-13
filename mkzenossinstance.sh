@@ -41,15 +41,15 @@ ZENGROUP=zenoss
 ZOPEHOME=${prefix}/zopehome
 ZOPEPASSWORD=zenoss
 ZOPE_LISTEN_PORT=8080
-ZOPE_USERNAME=admin	# btw, who uses this on a src build?
+ZOPE_USERNAME=admin     # btw, who uses this on a src build?
 ZODB_SOCKET=
-
 #-------------------------------------------------------------------------#
 SUCCESS=0
 E_RABBITMQ=100
 E_MISSING_STARTUP=101
 E_MKZOPE=102
-E_NO_AMQP_UTIL_JAR=103
+# No longer used.
+# E_NO_AMQP_UTIL_JAR=103
 E_BAD_ENV_SETUP=104
 E_MISSING_ZOPE_CONF=105
 E_BAD_ZOPE_CONF_SYNC=106
@@ -64,9 +64,6 @@ E_BAD_RABBITMQ_SERVER_VERSION_CHECK=114
 E_BAD_GLOBALCONF_GET=115
 E_MISSING_GLOBAL_CONF=116
 E_NO_EXEC_PERM=117
-
-# Contains method used to verify uplevel version of RabbitMQ is running.
-AMQP_UTIL_JAR="${INSTDIR}/externallibs/amqp-util.jar"
 
 # Sets various envvars we'll need from global.conf.
 STARTUP_ENV_SH=startup_env.sh
@@ -93,7 +90,7 @@ PYTHON=${ZENHOME}/venv/bin/python
 
 # TODO: Autoconfize this.  
 # Place to look for python modules when importing stuff.
-PYTHONPATH=${ZENHOME}/venv/lib/python
+PYTHONPATH=${ZENHOME}/lib/python
 
 # Primitive for parsing / managing global.conf.
 ZENGLOBALCONF=${ZENHOME}/bin/zenglobalconf
@@ -130,7 +127,8 @@ ENVVARS_GCVARS="\
 	ZODB_PASSWORD:zodb-password 		\
 	ZEP_DB_TYPE:zep-db-type 		\
 	ZEP_HOST:zep-host 			\
-	ZEP_DB:zep-db ZEP_PORT:zep-port 	\
+	ZEP_DB:zep-db				\
+	ZEP_PORT:zep-port			\
 	ZEP_ADMIN_USER:zep-admin-user 		\
 	ZEP_ADMIN_PASSWORD:zep-admin-password 	\
 	ZEP_USER:zep-user 			\
@@ -266,36 +264,30 @@ validate_rabbitmq()
 		sslarg="-s"
 	fi
     
-	if [ -f "${AMQP_UTIL_JAR}" ];then
-		echo -n "Checking RabbitMQ required version (${required_version}): "
-		java -cp "${AMQP_UTIL_JAR}" org.zenoss.amqp.util.VerifyRabbitVersion \
-		--host "${RABBITMQ_HOST}" --port "${RABBITMQ_PORT}" --vhost "${RABBITMQ_VHOST}" ${sslarg} \
-		--user "${RABBITMQ_USER}" --pass "${RABBITMQ_PASS}" ${required_version}
-		rc=$?	
-		if [ ${rc} -eq 0 ]; then
-			echo "[ OK ]"
-		else
-			echo "[FAIL]"
-			cat - <<-EOF
+	echo -n "Checking RabbitMQ required version (${required_version}): "
+	${PYTHON} ${ZENHOME}/Products/ZenUtils/qverify.py ${required_version} > /dev/null
+	rc=$?	
+	if [ ${rc} -eq 0 ]; then
+		echo "[ OK ]"
+	else
+		echo "[FAIL]"
+		cat - <<-EOF
 
-			Is RabbitMQ Server (version = ${required_version}) running?
+Is RabbitMQ Server (version = ${required_version}) running?
 
-			For example, on Red Hat / CentOS distros:
+For example, on Red Hat / CentOS distros:
 
-			    sudo service rabbitmq-server start
-			    sudo service rabbitmq-server status
-			
-			Have you configured RabbitMQ for Zenoss?
+    sudo service rabbitmq-server start
+    sudo service rabbitmq-server status
+        
+Have you configured RabbitMQ for Zenoss?
 
-			    sudo rabbitmqctl add_user ${RABBITMQ_USER} ${RABBITMQ_PASS}
-			    sudo rabbitmqctl add_vhost ${RABBITMQ_VHOST}
-			    sudo rabbitmqctl set_permissions -p ${RABBITMQ_VHOST} ${RABBITMQ_USER} '.*' '.*' '.*'
+    sudo rabbitmqctl add_user ${RABBITMQ_USER} ${RABBITMQ_PASS}
+    sudo rabbitmqctl add_vhost ${RABBITMQ_VHOST}
+    sudo rabbitmqctl set_permissions -p ${RABBITMQ_VHOST} ${RABBITMQ_USER} '.*' '.*' '.*'
 
 EOF
-			rc=${E_BAD_RABBITMQ_SERVER_VERSION_CHECK}
-		fi
-	else
-		rc=${E_NO_AMQP_UTIL_JAR}
+		rc=${E_BAD_RABBITMQ_SERVER_VERSION_CHECK}
 	fi
 	return ${rc}
 } # end validate_rabbitmq()
@@ -404,7 +396,7 @@ fi
 #-------------------------------------------------------------------------#
 if [ ${rc} -eq ${SUCCESS} ];then
 	echo -n "Creating Zope instance: "
-	mkzopeinstance --dir="${ZENHOME}" --user="admin:${ZOPEPASSWORD}"
+	${PYTHON} ${ZOPEHOME}/mkzopeinstance --dir="${ZENHOME}" --user="admin:${ZOPEPASSWORD}"
 	rc=$?
 	if [ ${rc} -eq ${SUCCESS} ];then
 		echo "[ OK ]"
@@ -490,7 +482,7 @@ fi
 #-------------------------------------------------------------------------#
 if [ ${rc} -eq ${SUCCESS} ];then
 	echo "Dropping and recreating zenoss-zep database: ..."
-	if zeneventserver-create-db --dbtype ${ZEP_DB_TYPE} --dbhost ${ZEP_HOST} --dbport ${ZEP_PORT} --dbadminuser ${ZEP_ADMIN_USER} --dbadminpass "${ZEP_ADMIN_PASSWORD}" --dbuser ${ZEP_USER} --dbpass "${ZEP_PASSWORD}" ; then
+	if zeneventserver-create-db --dbtype ${ZEP_DB_TYPE} --dbhost ${ZEP_HOST} --dbport ${ZEP_PORT} --dbadminuser ${ZEP_ADMIN_USER} --dbadminpass "${ZEP_ADMIN_PASSWORD}" --dbuser ${ZEP_USER} --dbpass "${ZEP_PASSWORD}" --dbname "${ZEP_DB}"; then
 		echo "[ OK ]"
 	else
 		echo "[FAIL]"
@@ -573,15 +565,3 @@ else
 
 EOF
 fi
-
-chmod +x $ZENHOME/bin/runzope
-chmod +x $ZENHOME/bin/zopectl
-
-cd $ZENHOME/etc
-for file in *.example
-do
-    basefile=$(basename $file .example)
-    if [ ! -f $basefile ] ; then \
-        cp $file $basefile
-    fi
-done

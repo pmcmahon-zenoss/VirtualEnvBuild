@@ -13,6 +13,8 @@ export PATH
 if [ -x /usr/bin/emerge ]
 then
     sudo USE="python sasl" emerge -u mysql rrdtool openldap zip unzip subversion
+    sudo emerge -u rabbitmq-server # note this needs to be updated to 2.8.6
+    # oracle java install and JAVA_HOME AND JAVA_PATH updated
 fi
 
 ./python_setup.sh
