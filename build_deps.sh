@@ -2,9 +2,17 @@ ZENHOME=/opt/zenoss
 VIRTUALENV=$ZENHOME/venv
 export ZENHOME
 export VIRTUALENV
+VIRTUALENV_PROG=virtualenv-2.7
 
 sudo mkdir -p $ZENHOME
 sudo chown -R zenoss $ZENHOME
+PATH=/usr/local/bin:/usr/bin:$PATH
+export PATH
+
+if [ -x /usr/bin/emerge ]
+then
+    sudo USE="python sasl" emerge -u mysql rrdtool openldap zip unzip subversion
+fi
 
 ./python_setup.sh
 
@@ -12,7 +20,7 @@ if [ ! -e $VIRTUALENV/bin/activate ]
 then
     sudo mkdir -p $VIRTUALENV
     sudo chown -R zenoss $VIRTUALENV
-    /usr/local/bin/virtualenv $VIRTUALENV
+    $VIRTUALENV_PROG $VIRTUALENV
 fi
 
 #Update the environment

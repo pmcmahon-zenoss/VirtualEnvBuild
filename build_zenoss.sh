@@ -5,8 +5,6 @@ ZOPEPASSWORD=zenoss
 LIBSMI_PACKAGE=libsmi-0.4.8.tar.gz
 NMAP_PACKAGE=nmap-6.01.tgz
 
-
-
 export ZENHOME
 export VIRTUALENV
 
@@ -45,7 +43,6 @@ else
     (cd Build/core && svn up)
 fi
 
-
 # Create some required directories
 mkdir -p $ZENHOME/{backups,export,build,etc}
 
@@ -59,10 +56,6 @@ cd ../..
 
 cp inst/License.zenoss $ZENHOME
 
-# Compile the javascript
-cp inst/externallibs/JSBuilder2.zip Build/ 
-(cd Build/;unzip -o JSBuilder2.zip)
-JSBUILDER=`pwd`/Build/JSBuilder2.jar ZENHOME=$ZENHOME `pwd`/inst/buildjs.sh
 
 #Setup the sitecustomize file
 PYTHONPATH=$(python -c "from distutils.sysconfig import get_python_lib; print(get_python_lib().replace('/site-packages',''))")
@@ -104,7 +97,8 @@ done
 cd ../..
 
 # Copy in the skel files?
-# Compile protoc
+# Compile protocol buffers
+# This tool is only required if we are going to compile them on our own.
 if [ ! -e $ZENHOME/bin/protoc ]
 then
     cd Build
@@ -118,6 +112,64 @@ then
     cd ../../..
 fi
 
+#Make zensocket
+#$ZENHOME is provided as part of the virtualenv environment and so thats how this knows where to go.
+cd inst/zensocket
+make
+make install
+cd ../..
+
+#Make pyraw
+# We need to patch this to make it venv aware.
+if [ ! -f inst/icmpecho/venv.patch ]
+then
+    cp patches/venv.patch inst/icmpecho/venv.patch
+    ( cd inst/icmpecho; patch -p0 < venv.patch )
+fi
+
+cd inst/icmpecho
+make
+cd ../../
+
+
+# fix the python path
+sed -i -e 's|PYTHON=$ZENHOME/bin/python|PYTHON=`which python`|g' $ZENHOME/bin/zenfunctions
+
+# build nmap, because we need it in the code and we set it setuid
+tar -C Build -xvf inst/externallibs/$NMAP_PACKAGE
+cd Build/
+cd $(ls -lda nmap*|grep ^drwx|awk '{print $9}')
+./configure --prefix=/opt/zenoss --without-zenmap --without-ndiff
+make
+make install
+cd ../..
+
+if [ ! -e $ZENHOME/share/mibs/site ]
+then
+    if [ ! -d $ZENHOME/share/mibs/site ]
+    then
+        mkdir -p $ZENHOME/share/mibs/site;
+    fi
+fi
+
+if [ ! -e $ZENHOME/share/mibs/site/ZENOSS-MIB.txt ]
+then
+    cp inst/mibs/* $ZENHOME/share/mibs/site
+fi
+
+# Install libsmi
+rm -rf Build/libsmi*
+cp inst/externallibs/$LIBSMI_PACKAGE Build/ 
+cd Build
+tar xvf $LIBSMI_PACKAGE
+cd $(ls -lda libsmi*|grep ^drwx|awk '{print $9}')
+./configure --prefix=$ZENHOME
+make
+make install
+cd ../..
+
+
+##### mvn/oracle dependancies below ####
 # Compile the java pieces
 cd Build/core/java/
 mvn clean install
@@ -138,58 +190,8 @@ ZEPDIST=$(ls -1 `pwd`/dist/target/zep-dist-*.tar.gz)
 (cd $ZENHOME;tar zxvhf $ZEPDIST)
 cd ../../..
 
-#Make zensocket
-cd inst/zensocket
-make
-make install
-cd ../..
 
-#Make pyraw
-# We need to patch this to make it venv aware.
-if [ ! -f inst/icmpecho/venv.patch ]
-then
-    cp patches/venv.patch inst/icmpecho/venv.patch
-    ( cd inst/icmpecho; patch -p0 < venv.patch )
-fi
-
-cd inst/icmpecho
-make
-cd ../../
-
-# fix the python path
-sed -i -e 's|PYTHON=$ZENHOME/bin/python|PYTHON=`which python`|g' $ZENHOME/bin/zenfunctions
-
-
-# Optional build nmap  ... preferrably we do use the system nmap.
-
-tar -C Build -xvf inst/externallibs/$NMAP_PACKAGE
-cd Build/
-cd $(ls -lda nmap*|grep ^drwx|awk '{print $9}')
-./configure --prefix=/opt/zenoss --without-zenmap --without-ndiff
-make
-make install
-cd ../..
-
-
-if [ ! -e $ZENHOME/share/mibs/site ]
-then
-    if [ ! -d $ZENHOME/share/mibs/site ]
-    then
-        mkdir -p $ZENHOME/share/mibs/site;
-    fi
-fi
-if [ ! -e $ZENHOME/share/mibs/site/ZENOSS-MIB.txt ]
-then
-    cp inst/mibs/* $ZENHOME/share/mibs/site
-fi
-
-# Install libsmi
-rm -rf Build/libsmi*
-cp inst/externallibs/$LIBSMI_PACKAGE Build/ 
-cd Build
-tar xvf $LIBSMI_PACKAGE
-cd $(ls -lda libsmi*|grep ^drwx|awk '{print $9}')
-./configure --prefix=$ZENHOME
-make
-make install
-cd ..
+# Compile the javascript , requires oracle java 1.6+
+cp inst/externallibs/JSBuilder2.zip Build/ 
+(cd Build/;unzip -o JSBuilder2.zip)
+JSBUILDER=`pwd`/Build/JSBuilder2.jar ZENHOME=$ZENHOME `pwd`/inst/buildjs.sh

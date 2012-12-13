@@ -39,6 +39,7 @@ compress() {
     case $1 in
       *.tar.bz2)    tar -cjPf $1 $2 ;;
       *.tar.gz)     tar -czPf $1 $2 ;;
+      *.tgz)        tar -czPf $1 $2 ;;
       *.zip)        zip -qr      $1 $2  ;;
       *)            echo "  '$1' file type unknown" ;;
     esac
@@ -57,14 +58,14 @@ fi
 
 for package in $patch_packages
 do
-   echo $package
+   echo "extracting $package"
    mkdir patch
    cp `pwd`/inst/externallibs/$package* patch
    cd patch
    file=$(ls|grep -v patch)
    extract $file
    directory=$(ls -l|grep ^d| ls -l|grep ^d|awk '{print $9}')
-   for patch in $(ls *.patch*); do patch -d $directory -p0 < ${patch}; done
+   for patch in $(ls *.patch*); do echo "Applying patch ${patch}";patch -d $directory -p0 < ${patch}; done
    rm $file
    compress $file $directory
    mv $file ../Build
