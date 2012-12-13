@@ -2,6 +2,10 @@ ZENHOME=/opt/zenoss
 VIRTUALENV=$ZENHOME/venv
 ZOPEUSER=admin
 ZOPEPASSWORD=zenoss
+LIBSMI_PACKAGE=libsmi-0.4.8.tar.gz
+NMAP_PACKAGE=nmap-6.01.tgz
+
+
 
 export ZENHOME
 export VIRTUALENV
@@ -101,7 +105,7 @@ cd ../..
 
 # Copy in the skel files?
 # Compile protoc
-if [ ! -e /opt/zenoss/bin/protoc ]
+if [ ! -e $ZENHOME/bin/protoc ]
 then
     cd Build
     tar xvf protobuf*tar*
@@ -158,9 +162,34 @@ sed -i -e 's|PYTHON=$ZENHOME/bin/python|PYTHON=`which python`|g' $ZENHOME/bin/ze
 
 # Optional build nmap  ... preferrably we do use the system nmap.
 
-tar -C Build -xvf inst/externallibs/nmap-6.01.tgz
-cd Build/nmap-6.01
+tar -C Build -xvf inst/externallibs/$NMAP_PACKAGE
+cd Build/
+cd $(ls -lda nmap*|grep ^drwx|awk '{print $9}')
 ./configure --prefix=/opt/zenoss --without-zenmap --without-ndiff
 make
 make install
 cd ../..
+
+
+if [ ! -e $ZENHOME/share/mibs/site ]
+then
+    if [ ! -d $ZENHOME/share/mibs/site ]
+    then
+        mkdir -p $ZENHOME/share/mibs/site;
+    fi
+fi
+if [ ! -e $ZENHOME/share/mibs/site/ZENOSS-MIB.txt ]
+then
+    cp inst/mibs/* $ZENHOME/share/mibs/site
+fi
+
+# Install libsmi
+rm -rf Build/libsmi*
+cp inst/externallibs/$LIBSMI_PACKAGE Build/ 
+cd Build
+tar xvf $LIBSMI_PACKAGE
+cd $(ls -lda libsmi*|grep ^drwx|awk '{print $9}')
+./configure --prefix=$ZENHOME
+make
+make install
+cd ..
