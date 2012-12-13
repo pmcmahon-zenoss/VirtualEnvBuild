@@ -1,0 +1,4 @@
+mysql-python requires mysql to be installed (deps not handled)
+needs rrdtool[python]
+needs openldep[sasl]
+protobuf doesn't exist in Build/
