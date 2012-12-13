@@ -8,12 +8,14 @@ NMAP_PACKAGE=nmap-6.01.tgz
 export ZENHOME
 export VIRTUALENV
 
+
+# Creates base $VIRTUALENV
 ./build_deps.sh
 
+# Reactivate the virtual environment to update the PATH
 source $VIRTUALENV/bin/activate
 
 #Checkout our sources and scripts
-
 # Setup the bin folder
 if [ ! -d $ZENHOME/bin ]
 then
