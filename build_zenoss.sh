@@ -5,21 +5,8 @@ ZOPEPASSWORD=zenoss
 LIBSMI_PACKAGE=libsmi-0.4.8.tar.gz
 NMAP_PACKAGE=nmap-6.01.tgz
 
-PATH=/usr/jdk1.6.0_38/bin/:$PATH
-export PATH
-
-# manually install jdk
-# manually install binary maven via install_maven script
-
-
-export M2_HOME=`pwd`/apache-maven-3.0.4
-export M2=$M2_HOME/bin
-export PATH=$M2:$PATH
-export JAVA_HOME=/usr/jdk1.6.0_38
-
 export ZENHOME
 export VIRTUALENV
-
 
 # Creates base $VIRTUALENV
 ./build_deps.sh
@@ -69,7 +56,6 @@ done
 cd ../..
 
 cp inst/License.zenoss $ZENHOME
-
 
 #Setup the sitecustomize file
 PYTHONPATH=$(python -c "from distutils.sysconfig import get_python_lib; print(get_python_lib().replace('/site-packages',''))")
