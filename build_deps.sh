@@ -8,9 +8,6 @@ export VIRTUALENV
 sudo mkdir -p $ZENHOME
 sudo chown -R zenoss $ZENHOME
 
-chmod +x /opt/zenoss/bin/zopectl
-chmod +x /opt/zenoss/bin/runzope
-
 ./python_setup.sh
 
 # Create a virtual environment if it doesnt already exist

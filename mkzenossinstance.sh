@@ -76,6 +76,9 @@ ZOPE_CONF=${ZENHOME}/etc/zope.conf
 
 ZODB_SCHEMA_DIR=${ZENHOME}/Products/ZenUtils/relstorage
 
+chmod +x ${ZENHOME}/bin/zopectl
+chmod +x ${ZENHOME}/bin/runzope
+
 # Primitive for building zentinel portal and device management database.
 ZENBUILD=${ZENHOME}/bin/zenbuild
 
