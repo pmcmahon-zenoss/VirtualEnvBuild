@@ -7,25 +7,11 @@ export VIRTUALENV
 
 sudo mkdir -p $ZENHOME
 sudo chown -R zenoss $ZENHOME
-PATH=/usr/local/bin:/usr/bin:$PATH
-export PATH
 
-if [ -x /usr/bin/emerge ]
-then
-    sudo USE="python sasl" emerge -u mysql rrdtool openldap zip unzip subversion
-    sudo emerge -u rabbitmq-server # note this needs to be updated to 2.8.6
-    sudo emerge -u net-snmp
-    sudo emerge --config =dev-db/mysql-5.5.28
-    chmod +x /opt/zenoss/bin/zopectl
-    chmod +x /opt/zenoss/bin/runzope
-    # had to run mysql> SET GLOBAL binlog_format = 'MIXED'; at the mysql command
-
-    #sudo emerge -u jdk
-    # oracle java install and JAVA_HOME AND JAVA_PATH updated
-fi
+chmod +x /opt/zenoss/bin/zopectl
+chmod +x /opt/zenoss/bin/runzope
 
 ./python_setup.sh
-
 
 # Create a virtual environment if it doesnt already exist
 if [ ! -e $VIRTUALENV/bin/activate ]
