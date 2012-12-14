@@ -48,9 +48,7 @@ Sudo:
 # emerge zip unzip (not sure if this is just for build or also runtime? Guessing just build)
 
 # emerge dev-db/mysql (our mysql-python requires mysql commands to be available)
-# emerge --config mysql (not sure if this is needed for build, or setup?)
 
-# had to run mysql> SET GLOBAL binlog_format = 'MIXED'; at the mysql command
 # workaround for what issue? Ask Eric.
 
 add "python" to USE, then:
@@ -75,20 +73,28 @@ for zenoss itself to run.
 Note: It appears that mkzopeinstance doesn't like being run as root,
 and this may be the only real issue with doing a pure build as root.
 
-=== build_deps will install: ===
-
-The following packages will be instaleld by build_deps.sh:
-
-RDEPEND="mysql rrdtool openldap rabbitmq-server net-snmp"
-DEPEND="zip unzip subversion"
-
 === Starting the build process ===
 
-First, check out this source tree and place it in
+First, as the zenoss user, check out this source tree and place it in
 /home/zenoss/VirtualEnvBuild. Ensure that all the prerequisites above are met.
-Then, enter VirtualEnvBuild and run the following scripts:
+Then, as the zenoss user, enter VirtualEnvBuild and run the following scripts:
 
 $ ./build_zenoss.sh
+
+Now, initial setup of zenoss:
+
+
+As root:
+# emerge --config mysql (not sure if this is needed for build, or setup?)
+# rc-update add mysql default
+# rc
+# mysql -u root -p
+(enter password)
+mysql> SET GLOBAL binlog_format = 'MIXED'; at the mysql command
+mysql> quit;
+
+Now, back as the zenoss user:
+This is the initial zenoss setup script:
 $ source /opt/zenoss/venv/bin activate
 $ ./mkzenossinstance.sh
 

@@ -28,7 +28,6 @@ sed -i -e 's|PATH="$VIRTUAL_ENV/bin:$PATH"|PATH="$VIRTUAL_ENV/../bin:$VIRTUAL_EN
 #Activate the virtual env
 source $VIRTUALENV/bin/activate
 
-
 # Early checkout of the inst directory.
 if [ ! -d inst ]
 then
