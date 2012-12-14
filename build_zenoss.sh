@@ -216,3 +216,7 @@ cd ../../..
 cp inst/externallibs/JSBuilder2.zip Build/ 
 (cd Build/;unzip -o JSBuilder2.zip)
 JSBUILDER=`pwd`/Build/JSBuilder2.jar ZENHOME=$ZENHOME `pwd`/inst/buildjs.sh
+
+
+#TODO:
+#patch the zendmd file /opt/zenoss/bin/zendmd to point to the correct python path or reuse zenfunctions
