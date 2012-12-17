@@ -97,14 +97,13 @@ fi
 mkdir -p $ZENHOME/{backups,export,build,etc} || die "standard dir create fail"
 
 # Copy the license
-cd inst/externallibs || die "cd fail"
+cd $BUILDDIR/inst/externallibs || die "cd fail"
 for i in $(ls Licenses.*)
 do
     cp $i $ZENHOME || die "license $i fail"
 done
-cd ../..
 
-cp inst/License.zenoss $ZENHOME || die "license fail"
+cp $BUILDDIR/inst/License.zenoss $ZENHOME || die "license fail"
 
 #Setup the sitecustomize file
 PYTHONPATH=$(python -c "from distutils.sysconfig import get_python_lib; print(get_python_lib().replace('/site-packages',''))")
@@ -134,7 +133,7 @@ then
     cp inst/conf/global.conf $ZENHOME/etc/ || die "global.conf copy fail"
 fi
 
-cd inst/conf
+cd $BUILDDIR/inst/conf
 for conf in *
 do  
     if [ ! -f $ZENHOME/etc/$conf.example ]
@@ -143,7 +142,6 @@ do
         sed -i -e 's/ZENUSERNAME/$(ZOPEUSER)/' -e 's/ZENPASSWORD/$(ZOPEPASSWORD)/' $ZENHOME/etc/$conf || die "$conf fail"
     fi
 done
-cd ../..
 
 # Copy in the skel files?
 # Compile protocol buffers

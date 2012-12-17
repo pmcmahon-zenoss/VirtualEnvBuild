@@ -121,7 +121,7 @@ file:##PWD##/inst/zenoss-version
 file:##PWD##/inst/icmpecho
 file:##PWD##/celery-3.0.9.tar.gz
 file:##PWD##/greenlet-0.3.1.tar.gz
-file:##PWD##/lxml-2.3.tar.gz # if distro doesn't have xslt-setup in path, will die due to libxml2 headers not found
+file:##PWD##/lxml-2.3.tar.gz
 file:##PWD##/networkx-1.3.tar.gz
 file:##PWD##/pyip-0.7.tar.gz
 file:##PWD##/pyOpenSSL-0.13.tar.gz
