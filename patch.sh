@@ -49,7 +49,7 @@ compress() {
 
 
 #patch_packages="celery protobuf google-breakpad greenlet lxml networkx pyip pyOpenSSL PyXML RelStorage Twisted txAMQP urllib3 Zope2"
-patch_packages=$(for patch in $(cd `pwd`/inst/externallibs; ls *patch*); do echo ${patch}|perl -ne 'if (m/(.*)-r?\d/g){print "$1\n"}'; done|sort|uniq)
+patch_packages=$(for patch in $(cd $BUILDDIR/inst/externallibs; ls *patch*); do echo ${patch}|perl -ne 'if (m/(.*)-r?\d/g){print "$1\n"}'; done|sort|uniq)
 
 if [ -d patch ]
 then
@@ -60,7 +60,7 @@ for package in $patch_packages
 do
    echo "extracting $package"
    mkdir patch
-   cp `pwd`/inst/externallibs/$package* patch
+   cp $BUILDDIR/inst/externallibs/$package* patch
    cd patch
    file=$(ls|grep -v patch)
    extract $file
