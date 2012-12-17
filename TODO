@@ -1,0 +1,3 @@
+* patch zendmd to use virtualenv
+* add a pre-check for required binaries: xslt-config and mvn, svn, mysql_something, others?
+* test, tweak mkzenossintance
