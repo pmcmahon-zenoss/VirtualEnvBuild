@@ -62,6 +62,7 @@ add "sasl" to USE, then:
 # emerge dev-python/pip virtualenv
 
 # emerge rabbitmq-server
+# emerge libxslt
 
 == Zenoss user ==
 

@@ -1,5 +1,4 @@
 Build/
-inst/
 log
 *.deb
 apache-*
