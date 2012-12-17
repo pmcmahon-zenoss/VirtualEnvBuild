@@ -1,5 +1,6 @@
-ZENHOME=/opt/zenoss
+ZENHOME=/opt/zenoss4
 VIRTUALENV=$ZENHOME/venv
+VIRTUALENV_PROG=virtualenv-2.7
 ZOPEUSER=admin
 ZOPEPASSWORD=zenoss
 LIBSMI_PACKAGE=libsmi-0.4.8.tar.gz
@@ -8,8 +9,57 @@ NMAP_PACKAGE=nmap-6.01.tgz
 export ZENHOME
 export VIRTUALENV
 
-# Creates base $VIRTUALENV
-./build_deps.sh
+die() {
+	echo $*
+	exit 1
+}
+
+try() {
+	"$@"
+	[ $? -ne 0 ] && echo Failure: $* && exit 1
+}
+
+
+mkdir -p $VIRTUALENV || die "Couldn't create $VIRTUALENV"
+
+if [ ! -d 'Build' ]
+then
+   try mkdir Build
+fi
+try cd Build
+
+# Create a virtual environment if it doesnt already exist
+if [ ! -e $VIRTUALENV/bin/activate ]
+then
+    try mkdir -p $VIRTUALENV
+    $VIRTUALENV_PROG $VIRTUALENV || die "virtualenv fail"
+fi
+
+#Update the environment
+#Change the paths and add a ZENHOME env variable
+sed -i -e 's|PATH="$VIRTUAL_ENV/bin:$PATH"|PATH="$VIRTUAL_ENV/../bin:$VIRTUAL_ENV/bin:$PATH"\nZENHOME='$ZENHOME'\nexport ZENHOME|g' $VIRTUALENV/bin/activate || die "path fix fail"
+
+#Activate the virtual env
+source $VIRTUALENV/bin/activate || die "couldn't activate virtualenv"
+
+# Early checkout of the inst directory.
+if [ ! -d inst ]
+then
+    svn co http://dev.zenoss.com/svnint/trunk/core/inst inst || die "couldn't check out inst"
+else
+    (cd inst && svn up)
+fi
+
+# patch some packages.
+./patch.sh || die
+
+# The requirements.txt will be unique per branch
+# Install the zope/python dependancies for the app.
+cp requirements.txt Build/
+sed -i -e "s|##PWD##|`pwd`|g" Build/requirements.txt || die "couldn't sed tweak requirements.txt"
+
+#pip should be found in the virtual environments path easily at this point
+pip install -r Build/requirements.txt || die "pip failure"
 
 # Reactivate the virtual environment to update the PATH
 source $VIRTUALENV/bin/activate
@@ -202,6 +252,10 @@ cd ../../..
 cp inst/externallibs/JSBuilder2.zip Build/ 
 (cd Build/;unzip -o JSBuilder2.zip)
 JSBUILDER=`pwd`/Build/JSBuilder2.jar ZENHOME=$ZENHOME `pwd`/inst/buildjs.sh
+
+echo "Setting permissions..."
+chown -R zenoss:zenoss $ZENHOME || die "Couldn't set permissions"
+echo "Done!"
 
 
 #TODO:

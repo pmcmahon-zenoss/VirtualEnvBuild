@@ -61,6 +61,8 @@ add "sasl" to USE, then:
 
 # emerge dev-python/pip virtualenv
 
+# emerge rabbitmq-server
+
 == Zenoss user ==
 
 A zenoss user and group must exist and currently requires passwordless sudo
