@@ -8,7 +8,7 @@ Index: Makefile
 -CFLAGS  = -I$(DESTDIR)$(ZENHOME)/include/python2.7
 -LDFLAGS = -L$(DESTDIR)$(ZENHOME)/lib
 +OUTPUT  = $(ZENHOME)/bin/$(PROJECT)
-+CFLAGS  = -I$(VIRTUAL_ENV)/include/python2.7 -I/usr/include/libxml2
-+LDFLAGS = -L$(VIRTUAL_ENV)/lib -L/usr/lib
++CFLAGS  = -I$(VIRTUAL_ENV)/include/python2.7
++LDFLAGS = -L$(VIRTUAL_ENV)/lib
  LDLIBS  = -lpython2.7 -ldl
  CC     ?= gcc

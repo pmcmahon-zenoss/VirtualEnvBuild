@@ -1,9 +1,10 @@
-export BUILDDIR=`pwd`/Build
+ORIG_DIR=`pwd`
+export BUILDDIR=$ORIG_DIR/Build
 rm -rf $BUILDDIR
 [ -z "$MAKEOPTS" ] && MAKEOPTS="-j$(cat /proc/cpuinfo | grep -c vendor_id)"
 ZENHOME=/opt/zenoss4
 PYTHON_VERSION=2.7
-PYTHON=python-2.7
+PYTHON=python${PYTHON_VERSION}
 VIRTUALENV=$ZENHOME/venv
 VIRTUALENV_PROG=virtualenv-$PYTHON_VERSION
 ZOPEUSER=admin
@@ -112,7 +113,7 @@ then
     rm $SITECUSTOMIZE
 fi
 
-cat << EOF > $SITECUSTOMIZE
+cat << EOF > $SITECUSTOMIZE || die "sitecustomize.py fail"
 import sys, os, site
 import warnings
 warnings.filterwarnings('ignore', '.*', DeprecationWarning)
@@ -138,7 +139,7 @@ do
     if [ ! -f $ZENHOME/etc/$conf.example ]
     then
         cp $conf $ZENHOME/etc/$conf.example
-        sed -i -e 's/ZENUSERNAME/$(ZOPEUSER)/' -e 's/ZENPASSWORD/$(ZOPEPASSWORD)/' $ZENHOME/etc/$conf || die "$conf fail"
+        sed -i -e 's/ZENUSERNAME/$(ZOPEUSER)/' -e 's/ZENPASSWORD/$(ZOPEPASSWORD)/' $ZENHOME/etc/$conf.example || die "$conf fail"
     fi
 done
 
@@ -159,7 +160,7 @@ fi
 
 #Make zensocket
 #$ZENHOME is provided as part of the virtualenv environment and so thats how this knows where to go.
-cd $BUILDDIR/zensocket
+cd $BUILDDIR/inst/zensocket
 make ${MAKEOPTS} || die "zensocket build fail"
 make install || "zensocket install fail"
 
@@ -167,7 +168,7 @@ make install || "zensocket install fail"
 # We need to patch this to make it venv aware.
 if [ ! -f $BUILDDIR/inst/icmpecho/venv.patch ]
 then
-    cp patches/venv.patch inst/icmpecho/venv.patch || die "venv patch copy fail"
+    cp $ORIG_DIR/patches/venv.patch inst/icmpecho/venv.patch || die "venv patch copy fail"
     ( cd $BUILDDIR/inst/icmpecho; patch -p0 < venv.patch ) || die "venv patch fail"
 fi
 
