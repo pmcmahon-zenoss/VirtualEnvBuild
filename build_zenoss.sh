@@ -192,7 +192,7 @@ fi
 install -d $ZENHOME/share/mibs/site || die "mibs/site mkdir fail"
 if [ ! -e $ZENHOME/share/mibs/site/ZENOSS-MIB.txt ]
 then
-    cp inst/mibs/* $ZENHOME/share/mibs/site || die "mibs install fail"
+    cp $BUILDDIR/inst/mibs/* $ZENHOME/share/mibs/site || die "mibs install fail"
 fi
 # Install libsmi
 if [ ! -e $ZENHOME/bin/smidump ]
