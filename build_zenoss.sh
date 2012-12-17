@@ -1,3 +1,5 @@
+#!/bin/bash
+umask 002 #try to ensure that directories are not world-writeable
 ORIG_DIR=`pwd`
 export BUILDDIR=$ORIG_DIR/Build
 rm -rf $BUILDDIR
@@ -46,8 +48,6 @@ source $VIRTUALENV/bin/activate || die "couldn't activate virtualenv"
 if [ ! -d $BUILDDIR/inst ]
 then
     svn co http://dev.zenoss.com/svnint/trunk/core/inst $BUILDDIR/inst || die "couldn't check out inst"
-else
-    (cd inst && svn up) 
 fi
 
 # patch some packages.
@@ -69,29 +69,21 @@ source $VIRTUALENV/bin/activate || die "activate fail"
 if [ ! -d $ZENHOME/bin ]
 then
     svn co http://dev.zenoss.com/svnint/trunk/core/bin $ZENHOME/bin || die svn fail
-else
-    (cd $ZENHOME/bin && svn up)
 fi
 
 if [ ! -d $ZENHOME/Products ]
 then
     svn co http://dev.zenoss.com/svnint/trunk/core/Products $ZENHOME/Products || die svn fail
-else
-    (cd $ZENHOME/Products && svn up)
 fi
 
 if [ ! -d $ZENHOME/extras ]
 then
     svn co http://dev.zenoss.com/svnint/trunk/core/inst/fs $ZENHOME/extras || die svn fail
-else
-    (cd $ZENHOME/extras && svn up)
 fi
 
 if [ ! -d $BUILDDIR/core ]
 then
     svn co http://dev.zenoss.com/svnint/trunk/core $BUILDDIR/core || die svn fail
-else
-    (cd $BUILDDIR/core && svn up)
 fi
 
 # Create some required directories
@@ -233,6 +225,14 @@ JSBUILDER=$BUILDDIR/JSBuilder2.jar ZENHOME=$ZENHOME $BUILDDIR/inst/buildjs.sh ||
 
 echo "Setting permissions..."
 chown -R zenoss:zenoss $ZENHOME || die "Couldn't set permissions"
+
+# Maven does some nasty things with permissions. This is to fix that:
+find $ZENHOME -type d -exec chmod 0775 {} \; || die "dir perm fix"
+find $ZENHOME/webapps -type f -exec chmod 0664 {} \; || die "maven file fix"
+chmod 0775 $ZENHOME/bin/* || die "bin perm normalization"
+chown root:root $ZENHOME/bin/nmap $ZENHOME/bin/pyraw || die "nmap/praw owner fail"
+chmod u+s $ZENHOME/bin/nmap $ZENHOME/bin/pyraw || die "nmap/praw suid root fail"
+
 echo "Done!"
 
 #TODO:
