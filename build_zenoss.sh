@@ -1,8 +1,11 @@
 export BUILDDIR=`pwd`/Build
 rm -rf $BUILDDIR
+[ -z "$MAKEOPTS" ] && MAKEOPTS="-j$(cat /proc/cpuinfo | grep -c vendor_id)"
 ZENHOME=/opt/zenoss4
+PYTHON_VERSION=2.7
+PYTHON=python-2.7
 VIRTUALENV=$ZENHOME/venv
-VIRTUALENV_PROG=virtualenv-2.7
+VIRTUALENV_PROG=virtualenv-$PYTHON_VERSION
 ZOPEUSER=admin
 ZOPEPASSWORD=zenoss
 LIBSMI_PACKAGE=libsmi-0.4.8.tar.gz
@@ -43,11 +46,11 @@ if [ ! -d $BUILDDIR/inst ]
 then
     svn co http://dev.zenoss.com/svnint/trunk/core/inst $BUILDDIR/inst || die "couldn't check out inst"
 else
-    (cd inst && svn up)
+    (cd inst && svn up) 
 fi
 
 # patch some packages.
-./patch.sh || die
+./patch.sh || die "patch fail" 
 
 # The requirements.txt will be unique per branch
 # Install the zope/python dependancies for the app.
@@ -58,60 +61,60 @@ sed -i -e "s|##PWD##|$BUILDDIR|g" $BUILDDIR/requirements.txt || die "couldn't se
 pip install -r $BUILDDIR/requirements.txt || die "pip failure"
 
 # Reactivate the virtual environment to update the PATH
-source $VIRTUALENV/bin/activate
+source $VIRTUALENV/bin/activate || die "activate fail"
 
 #Checkout our sources and scripts
 # Setup the bin folder
 if [ ! -d $ZENHOME/bin ]
 then
-    svn co http://dev.zenoss.com/svnint/trunk/core/bin $ZENHOME/bin
+    svn co http://dev.zenoss.com/svnint/trunk/core/bin $ZENHOME/bin || die svn fail
 else
     (cd $ZENHOME/bin && svn up)
 fi
 
 if [ ! -d $ZENHOME/Products ]
 then
-    svn co http://dev.zenoss.com/svnint/trunk/core/Products $ZENHOME/Products
+    svn co http://dev.zenoss.com/svnint/trunk/core/Products $ZENHOME/Products || die svn fail
 else
     (cd $ZENHOME/Products && svn up)
 fi
 
 if [ ! -d $ZENHOME/extras ]
 then
-    svn co http://dev.zenoss.com/svnint/trunk/core/inst/fs $ZENHOME/extras
+    svn co http://dev.zenoss.com/svnint/trunk/core/inst/fs $ZENHOME/extras || die svn fail
 else
     (cd $ZENHOME/extras && svn up)
 fi
 
 if [ ! -d $BUILDDIR/core ]
 then
-    svn co http://dev.zenoss.com/svnint/trunk/core $BUILDDIR/core
+    svn co http://dev.zenoss.com/svnint/trunk/core $BUILDDIR/core || die svn fail
 else
     (cd $BUILDDIR/core && svn up)
 fi
 
 # Create some required directories
-mkdir -p $ZENHOME/{backups,export,build,etc}
+mkdir -p $ZENHOME/{backups,export,build,etc} || die "standard dir create fail"
 
 # Copy the license
-cd inst/externallibs
+cd inst/externallibs || die "cd fail"
 for i in $(ls Licenses.*)
 do
-    cp $i $ZENHOME
+    cp $i $ZENHOME || die "license $i fail"
 done
 cd ../..
 
-cp inst/License.zenoss $ZENHOME
+cp inst/License.zenoss $ZENHOME || die "license fail"
 
 #Setup the sitecustomize file
 PYTHONPATH=$(python -c "from distutils.sysconfig import get_python_lib; print(get_python_lib().replace('/site-packages',''))")
-SITECUSTOMIZE=$PYTHONPATH/sitecustomize.py
+SITECUSTOMIZE=$VIRTUALENV/$PYTHON/sitecustomize.py
 if [ -f $SITECUSTOMIZE ]
 then
     rm $SITECUSTOMIZE
 fi
 
-cat << EOF > $PYTHONPATH/sitecustomize.py
+cat << EOF > $SITECUSTOMIZE
 import sys, os, site
 import warnings
 warnings.filterwarnings('ignore', '.*', DeprecationWarning)
@@ -123,12 +126,12 @@ EOF
 # Copy in conf files.
 
 # zenoss.conf
-sed -e "s;<<INSTANCE_HOME>>;$ZENHOME;g" inst/conf/zenoss.conf.in > $ZENHOME/etc/zenoss.conf
+sed -e "s;<<INSTANCE_HOME>>;$ZENHOME;g" inst/conf/zenoss.conf.in > $ZENHOME/etc/zenoss.conf || die "zenoss.conf install fail"
 
 # global.conf
 if [ ! -f $ZENHOME/etc/global.conf ]
 then
-    cp inst/conf/global.conf $ZENHOME/etc/
+    cp inst/conf/global.conf $ZENHOME/etc/ || die "global.conf copy fail"
 fi
 
 cd inst/conf
@@ -137,7 +140,7 @@ do
     if [ ! -f $ZENHOME/etc/$conf.example ]
     then
         cp $conf $ZENHOME/etc/$conf.example
-        sed -i -e 's/ZENUSERNAME/$(ZOPEUSER)/' -e 's/ZENPASSWORD/$(ZOPEPASSWORD)/' $ZENHOME/etc/$conf
+        sed -i -e 's/ZENUSERNAME/$(ZOPEUSER)/' -e 's/ZENPASSWORD/$(ZOPEPASSWORD)/' $ZENHOME/etc/$conf || die "$conf fail"
     fi
 done
 cd ../..
@@ -148,57 +151,57 @@ cd ../..
 if [ ! -e $ZENHOME/bin/protoc ]
 then
     cd $BUILDDIR
-    tar xvf protobuf*tar*
+    tar xvf protobuf*tar* || die "protobuf extract fail"
     cd protobuf*
-    ./configure --prefix=$ZENHOME --enable-shared=yes --enable-static=no
-    make
-    make install
+    ./configure --prefix=$ZENHOME --enable-shared=yes --enable-static=no || die "protobuf configure fail"
+    make ${MAKEOPTS} || die "protobuf build fail"
+    make install || die "protobuf install fail"
     cd python/
-    python setup.py install
+    python setup.py install || die "protobuf python install fail"
 fi
 
 #Make zensocket
 #$ZENHOME is provided as part of the virtualenv environment and so thats how this knows where to go.
 cd $BUILDDIR/zensocket
-make
-make install
+make ${MAKEOPTS} || die "zensocket build fail"
+make install || "zensocket install fail"
 
 #Make pyraw
 # We need to patch this to make it venv aware.
 if [ ! -f $BUILDDIR/inst/icmpecho/venv.patch ]
 then
-    cp patches/venv.patch inst/icmpecho/venv.patch
-    ( cd $BUILDDIR/inst/icmpecho; patch -p0 < venv.patch )
+    cp patches/venv.patch inst/icmpecho/venv.patch || die "venv patch copy fail"
+    ( cd $BUILDDIR/inst/icmpecho; patch -p0 < venv.patch ) || die "venv patch fail"
 fi
 
 cd $BUILDDIR/inst/icmpecho
-make
+make ${MAKEOPTS} || die "icmpecho fail"
 
 # fix the python path
-sed -i -e 's|PYTHON=$ZENHOME/bin/python|PYTHON=`which python`|g' $ZENHOME/bin/zenfunctions
+sed -i -e 's|PYTHON=$ZENHOME/bin/python|PYTHON=`which python`|g' $ZENHOME/bin/zenfunctions || die "python path fix fail"
 
 # build nmap, because we need it in the code and we set it setuid
 if [ ! -e $ZENHOME/bin/nmap ]
 then
-    tar -C $BUILDDIR -xvf inst/externallibs/$NMAP_PACKAGE
+    tar -C $BUILDDIR -xvf inst/externallibs/$NMAP_PACKAGE || die "nmap extract fail"
     cd $BUILDDIR
-    cd $(ls -lda nmap*|grep ^drwx|awk '{print $9}')
-    ./configure --prefix=$ZENHOME --without-zenmap --without-ndiff
-    make
-    make install
+    cd $(ls -lda nmap*|grep ^drwx|awk '{print $9}') || die "nmap cd fail"
+    ./configure --prefix=$ZENHOME --without-zenmap --without-ndiff || die "nmap configure fail"
+    make ${MAKEOPTS} || die "nmap build fail"
+    make install || die "nmap install fail"
 fi
 
 if [ ! -e $ZENHOME/share/mibs/site ]
 then
     if [ ! -d $ZENHOME/share/mibs/site ]
     then
-        mkdir -p $ZENHOME/share/mibs/site;
+        mkdir -p $ZENHOME/share/mibs/site; || die "mibs/site mkdir fail"
     fi
 fi
 
 if [ ! -e $ZENHOME/share/mibs/site/ZENOSS-MIB.txt ]
 then
-    cp inst/mibs/* $ZENHOME/share/mibs/site
+    cp inst/mibs/* $ZENHOME/share/mibs/site || die "mibs install fail"
 fi
 
 
@@ -208,37 +211,36 @@ then
     rm -rf $BUILDDIR/libsmi*
     cp inst/externallibs/$LIBSMI_PACKAGE $BUILDDIR
     cd $BUILDDIR
-    tar xvf $LIBSMI_PACKAGE
-    cd $(ls -lda libsmi*|grep ^drwx|awk '{print $9}')
-    ./configure --prefix=$ZENHOME
-    make
-    make install
+    tar xvf $LIBSMI_PACKAGE || die "libsmi extract fail"
+    cd $(ls -lda libsmi*|grep ^drwx|awk '{print $9}') || die "libsmi cd fail"
+    ./configure --prefix=$ZENHOME || die "libsmi configure fail"
+    make ${MAKEOPTS} || die "libsmi build fail"
+    make install || die "libsmi install fail"
 fi
 
 ##### mvn/oracle dependancies below ####
 # Compile the java pieces
 cd $BUILDDIR/core/java/
-mvn clean install
-pwd
+mvn clean install || die "core java build fail"
 # Compile the protocols
 cd $BUILDDIR/core/protocols/
-PATH=$ZENHOME/bin/:${PATH} LD_LIBRARY_PATH=$ZENHOME/lib mvn -f java/pom.xml clean install
-PATH=$ZENHOME/bin/:${PATH} LD_LIBRARY_PATH=$ZENHOME/lib make -C python clean build
+PATH=$ZENHOME/bin/:${PATH} LD_LIBRARY_PATH=$ZENHOME/lib mvn -f java/pom.xml clean install || die "java protocol build fail"
+PATH=$ZENHOME/bin/:${PATH} LD_LIBRARY_PATH=$ZENHOME/lib make -C python clean build || die "python protocol build fail"
 cd python/
-python setup.py install
+python setup.py install | die "python protocol install fail"
 
 #compile zep
-cd $BUILDDIR/core/zep
-PATH=$ZENHOME/bin/:${PATH} LD_LIBRARY_PATH=$ZENHOME/lib mvn clean install
+try cd $BUILDDIR/core/zep
+PATH=$ZENHOME/bin/:${PATH} LD_LIBRARY_PATH=$ZENHOME/lib mvn clean install || die "zep build fail"
 
 #Install zep
-ZEPDIST=$(ls -1 `pwd`/dist/target/zep-dist-*.tar.gz)
-(cd $ZENHOME;tar zxvhf $ZEPDIST)
+ZEPDIST=$(ls -1 $BUILDDIR/core/zep/dist/target/zep-dist-*.tar.gz)
+(cd $ZENHOME;tar zxvhf $ZEPDIST) || die "zepdist extract fail"
 
 # Compile the javascript , requires oracle java 1.6+
 cp $BUILDDIR/inst/externallibs/JSBuilder2.zip $BUILDDIR/
-(cd $BUILDDIR/;unzip -o JSBuilder2.zip)
-JSBUILDER=$BUILDDIR/JSBuilder2.jar ZENHOME=$ZENHOME `pwd`/inst/buildjs.sh
+(cd $BUILDDIR/;unzip -o JSBuilder2.zip) || die "JSBuilder2 unzip fail"
+JSBUILDER=$BUILDDIR/JSBuilder2.jar ZENHOME=$ZENHOME $BUILDDIR/inst/buildjs.sh || die "JS compile failed"
 
 echo "Setting permissions..."
 chown -R zenoss:zenoss $ZENHOME || die "Couldn't set permissions"
