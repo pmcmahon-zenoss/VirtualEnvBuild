@@ -168,7 +168,7 @@ make install || "zensocket install fail"
 # We need to patch this to make it venv aware.
 if [ ! -f $BUILDDIR/inst/icmpecho/venv.patch ]
 then
-    cp $ORIG_DIR/patches/venv.patch inst/icmpecho/venv.patch || die "venv patch copy fail"
+    cp $ORIG_DIR/patches/venv.patch $BUILDDIR/inst/icmpecho/venv.patch || die "venv patch copy fail"
     ( cd $BUILDDIR/inst/icmpecho; patch -p0 < venv.patch ) || die "venv patch fail"
 fi
 
@@ -181,33 +181,24 @@ sed -i -e 's|PYTHON=$ZENHOME/bin/python|PYTHON=`which python`|g' $ZENHOME/bin/ze
 # build nmap, because we need it in the code and we set it setuid
 if [ ! -e $ZENHOME/bin/nmap ]
 then
-    tar -C $BUILDDIR -xvf inst/externallibs/$NMAP_PACKAGE || die "nmap extract fail"
     cd $BUILDDIR
+    tar -xvf $BUILDDIR/inst/externallibs/$NMAP_PACKAGE || die "nmap extract fail"
     cd $(ls -lda nmap*|grep ^drwx|awk '{print $9}') || die "nmap cd fail"
     ./configure --prefix=$ZENHOME --without-zenmap --without-ndiff || die "nmap configure fail"
     make ${MAKEOPTS} || die "nmap build fail"
     make install || die "nmap install fail"
 fi
 
-if [ ! -e $ZENHOME/share/mibs/site ]
-then
-    if [ ! -d $ZENHOME/share/mibs/site ]
-    then
-        mkdir -p $ZENHOME/share/mibs/site; || die "mibs/site mkdir fail"
-    fi
-fi
-
+install -d $ZENHOME/share/mibs/site || die "mibs/site mkdir fail"
 if [ ! -e $ZENHOME/share/mibs/site/ZENOSS-MIB.txt ]
 then
     cp inst/mibs/* $ZENHOME/share/mibs/site || die "mibs install fail"
 fi
-
-
 # Install libsmi
 if [ ! -e $ZENHOME/bin/smidump ]
 then
     rm -rf $BUILDDIR/libsmi*
-    cp inst/externallibs/$LIBSMI_PACKAGE $BUILDDIR
+    cp $BUILDDIR/inst/externallibs/$LIBSMI_PACKAGE $BUILDDIR
     cd $BUILDDIR
     tar xvf $LIBSMI_PACKAGE || die "libsmi extract fail"
     cd $(ls -lda libsmi*|grep ^drwx|awk '{print $9}') || die "libsmi cd fail"
