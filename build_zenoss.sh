@@ -106,8 +106,7 @@ done
 cp $BUILDDIR/inst/License.zenoss $ZENHOME || die "license fail"
 
 #Setup the sitecustomize file
-PYTHONPATH=$(python -c "from distutils.sysconfig import get_python_lib; print(get_python_lib().replace('/site-packages',''))")
-SITECUSTOMIZE=$VIRTUALENV/$PYTHON/sitecustomize.py
+SITECUSTOMIZE=$VIRTUALENV/lib/$PYTHON/sitecustomize.py
 if [ -f $SITECUSTOMIZE ]
 then
     rm $SITECUSTOMIZE
@@ -125,12 +124,12 @@ EOF
 # Copy in conf files.
 
 # zenoss.conf
-sed -e "s;<<INSTANCE_HOME>>;$ZENHOME;g" inst/conf/zenoss.conf.in > $ZENHOME/etc/zenoss.conf || die "zenoss.conf install fail"
+sed -e "s;<<INSTANCE_HOME>>;$ZENHOME;g" $BUILDDIR/inst/conf/zenoss.conf.in > $ZENHOME/etc/zenoss.conf || die "zenoss.conf install fail"
 
 # global.conf
 if [ ! -f $ZENHOME/etc/global.conf ]
 then
-    cp inst/conf/global.conf $ZENHOME/etc/ || die "global.conf copy fail"
+    cp $BUILDDIR/inst/conf/global.conf $ZENHOME/etc/ || die "global.conf copy fail"
 fi
 
 cd $BUILDDIR/inst/conf
