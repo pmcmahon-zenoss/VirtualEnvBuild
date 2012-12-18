@@ -167,8 +167,9 @@ fi
 cd $BUILDDIR/inst/icmpecho
 make ${MAKEOPTS} || die "icmpecho fail"
 
-# fix the python path
-sed -i -e 's|PYTHON=$ZENHOME/bin/python|PYTHON=`which python`|g' $ZENHOME/bin/zenfunctions || die "python path fix fail"
+# fix the python path by finding the virtualenv python in the path right now, hard-code it into zenfunctions:
+sed -i -e 's|PYTHON=$ZENHOME/bin/python|PYTHON='`which $PYTHON`'|g' $ZENHOME/bin/zenfunctions || die "python path fix fail"
+# TODO: add zendmd fix.
 
 # build nmap, because we need it in the code and we set it setuid
 if [ ! -e $ZENHOME/bin/nmap ]
