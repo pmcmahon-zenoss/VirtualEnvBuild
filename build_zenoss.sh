@@ -11,8 +11,11 @@ VIRTUALENV=$ZENHOME/venv
 VIRTUALENV_PROG=virtualenv-$PYTHON_VERSION
 ZOPEUSER=admin
 ZOPEPASSWORD=zenoss
+
 LIBSMI_PACKAGE=libsmi-0.4.8.tar.gz
+
 # this will vary based on tarball used:
+
 #A=zenoss-core-trunk-20121219.tar.xz
 #SRCDIR=$BUILDDIR/core
 #REQUIREMENTS=requirements.txt.trunk
@@ -56,8 +59,6 @@ sed -i -e 's|PATH="$VIRTUAL_ENV/bin:$PATH"|PATH="$VIRTUAL_ENV/../bin:$VIRTUAL_EN
 source $VIRTUALENV/bin/activate || die "couldn't activate virtualenv"
 
 tar xvf $A -C $BUILDDIR || die "source tar extract fail"
-
-
 
 # patch some packages.
 ./patch.sh || die "patch fail" 
@@ -114,7 +115,7 @@ then
     cp $INSTDIR/conf/global.conf $ZENHOME/etc/ || die "global.conf copy fail"
 fi
 
-cd $INST/conf
+cd $INSTDIR/conf || die "conf cd fail"
 for conf in *
 do  
     if [ ! -f $ZENHOME/etc/$conf.example ]
