@@ -12,10 +12,17 @@ VIRTUALENV_PROG=virtualenv-$PYTHON_VERSION
 ZOPEUSER=admin
 ZOPEPASSWORD=zenoss
 LIBSMI_PACKAGE=libsmi-0.4.8.tar.gz
-NMAP_PACKAGE=nmap-6.01.tgz
 # this will vary based on tarball used:
-A=zenoss-core-trunk-20121219.tar.xz
-SRCDIR=$BUILDDIR/core
+#A=zenoss-core-trunk-20121219.tar.xz
+#SRCDIR=$BUILDDIR/core
+#REQUIREMENTS=requirements.txt.trunk
+#NMAP_PACKAGE=nmap-6.01.tgz
+
+A=zenoss-core-4.2.x-stable-20121219.tar.xz
+SRCDIR=$BUILDDIR/zenoss-4.2.x
+REQUIREMENTS=requirements.txt.stable
+NMAP_PACKAGE=nmap-5.51.4.tgz
+
 INSTDIR=$SRCDIR/inst
 export INSTDIR
 export ZENHOME
@@ -57,7 +64,7 @@ tar xvf $A -C $BUILDDIR || die "source tar extract fail"
 
 # The requirements.txt will be unique per branch
 # Install the zope/python dependancies for the app.
-cp requirements.txt $BUILDDIR/
+cp $REQUIREMENTS $BUILDDIR/requirements.txt
 sed -i -e "s|##INST##|$INSTDIR|g" $BUILDDIR/requirements.txt || die "couldn't sed tweak requirements.txt"
 
 #pip should be found in the virtual environments path easily at this point
@@ -184,21 +191,21 @@ fi
 
 ##### mvn/oracle dependancies below ####
 # Compile the java pieces
-cd $BUILDDIR/core/java/
+cd $SRCDIR/java/
 mvn clean install || die "core java build fail"
 # Compile the protocols
-cd $BUILDDIR/core/protocols/
+cd $SRCDIR/protocols/
 PATH=$ZENHOME/bin/:${PATH} LD_LIBRARY_PATH=$ZENHOME/lib mvn -f java/pom.xml clean install || die "java protocol build fail"
 PATH=$ZENHOME/bin/:${PATH} LD_LIBRARY_PATH=$ZENHOME/lib make -C python clean build || die "python protocol build fail"
 cd python/
 python setup.py install | die "python protocol install fail"
 
 #compile zep
-try cd $BUILDDIR/core/zep
+try cd $SRCDIR/zep
 PATH=$ZENHOME/bin/:${PATH} LD_LIBRARY_PATH=$ZENHOME/lib mvn clean install || die "zep build fail"
 
 #Install zep
-ZEPDIST=$(ls -1 $BUILDDIR/core/zep/dist/target/zep-dist-*.tar.gz)
+ZEPDIST=$(ls -1 $SRCDIR/zep/dist/target/zep-dist-*.tar.gz)
 (cd $ZENHOME;tar zxvhf $ZEPDIST) || die "zepdist extract fail"
 
 # Compile the javascript , requires oracle java 1.6+
