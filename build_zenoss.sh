@@ -1,7 +1,7 @@
 #!/bin/bash
 umask 002 #try to ensure that directories are not world-writeable
 ORIG_DIR=`pwd`
-export BUILDDIR=$ORIG_DIR/Build
+BUILDDIR=$ORIG_DIR/Build
 rm -rf $BUILDDIR
 [ -z "$MAKEOPTS" ] && MAKEOPTS="-j$(cat /proc/cpuinfo | grep -c vendor_id)"
 ZENHOME=/opt/zenoss4
@@ -17,7 +17,7 @@ NMAP_PACKAGE=nmap-6.01.tgz
 A=zenoss-core-trunk-20121219.tar.xz
 SRCDIR=$BUILDDIR/core
 INSTDIR=$SRCDIR/inst
-
+export INSTDIR
 export ZENHOME
 export VIRTUALENV
 
@@ -58,7 +58,7 @@ tar xvf $A -C $BUILDDIR || die "source tar extract fail"
 # The requirements.txt will be unique per branch
 # Install the zope/python dependancies for the app.
 cp requirements.txt $BUILDDIR/
-sed -i -e "s|##PWD##|$BUILDDIR|g" $BUILDDIR/requirements.txt || die "couldn't sed tweak requirements.txt"
+sed -i -e "s|##INST##|$INSTDIR|g" $BUILDDIR/requirements.txt || die "couldn't sed tweak requirements.txt"
 
 #pip should be found in the virtual environments path easily at this point
 pip install -r $BUILDDIR/requirements.txt || die "pip failure"
