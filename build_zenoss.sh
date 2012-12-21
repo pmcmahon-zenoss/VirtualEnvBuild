@@ -1,5 +1,4 @@
 #!/bin/bash
-umask 002 #try to ensure that directories are not world-writeable
 ORIG_DIR=`pwd`
 BUILDDIR=$ORIG_DIR/Build
 rm -rf $BUILDDIR
@@ -16,15 +15,15 @@ LIBSMI_PACKAGE=libsmi-0.4.8.tar.gz
 
 # this will vary based on tarball used:
 
-#A=zenoss-core-trunk-20121219.tar.xz
-#SRCDIR=$BUILDDIR/core
-#REQUIREMENTS=requirements.txt.trunk
-#NMAP_PACKAGE=nmap-6.01.tgz
+A=zenoss-core-trunk-20121219.tar.xz
+SRCDIR=$BUILDDIR/core
+REQUIREMENTS=requirements.txt.trunk
+NMAP_PACKAGE=nmap-6.01.tgz
 
-A=zenoss-core-4.2.x-stable-20121219.tar.xz
-SRCDIR=$BUILDDIR/zenoss-4.2.x
-REQUIREMENTS=requirements.txt.stable
-NMAP_PACKAGE=nmap-5.51.4.tgz
+#A=zenoss-core-4.2.x-stable-20121219.tar.xz
+#SRCDIR=$BUILDDIR/zenoss-4.2.x
+#REQUIREMENTS=requirements.txt.stable
+#NMAP_PACKAGE=nmap-5.51.4.tgz
 
 INSTDIR=$SRCDIR/inst
 export INSTDIR
@@ -221,8 +220,8 @@ chown -R zenoss:zenoss $ZENHOME || die "Couldn't set permissions"
 find $ZENHOME -type d -exec chmod 0775 {} \; || die "dir perm fix"
 find $ZENHOME/webapps -type f -exec chmod 0664 {} \; || die "maven file fix"
 chmod 0775 $ZENHOME/bin/* || die "bin perm normalization"
-chown root:root $ZENHOME/bin/nmap $ZENHOME/bin/pyraw || die "nmap/praw owner fail"
-chmod u+s $ZENHOME/bin/nmap $ZENHOME/bin/pyraw || die "nmap/praw suid root fail"
+chown root:zenoss $ZENHOME/bin/nmap $ZENHOME/bin/pyraw $ZENHOME/bin/zensocket || die "nmap/praw owner fail"
+chmod 04750 $ZENHOME/bin/nmap $ZENHOME/bin/pyraw $ZENHOME/bin/zensocket || die "nmap/praw suid root fail"
 
 echo "Done!"
 
