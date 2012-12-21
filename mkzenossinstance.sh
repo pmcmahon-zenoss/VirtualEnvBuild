@@ -15,18 +15,6 @@
 ###########################################################################
 BN=${0##*/}
 
-#-------------------------------------------------------------------------#
-# Autoconf substitution variables populated during the configure step.
-#
-#                            +-------------+
-# mkzenossinstance.sh.in --> | ./configure | --> mkzenossinstance.sh
-#                            +-------------+
-#
-# NOTE:
-# Please make bug fixes to mkzenossinstance.sh.in and then re-run 
-# configure to generate the uplevel mkzenossinstance.sh script.
-#-------------------------------------------------------------------------#
-#
 RABBITMQ_HOST=localhost
 RABBITMQ_PASS=zenoss
 RABBITMQ_PORT=5672
@@ -316,6 +304,17 @@ export ZOPEHOME
 export ZOPEPASSWORD
 export ZOPE_LISTEN_PORT
 export ZOPE_USERNAME
+
+die() {
+	echo $*
+	exit 1
+}
+
+# initialize example configs with Zope username and password:
+
+for conf in $ZENHOME/etc/*.conf.example; do
+	sed -i -e 's/ZENUSERNAME/$(ZOPE_USERNAME)/' -e 's/ZENPASSWORD/$(ZOPEPASSWORD)/' $conf || die "$conf fail"
+done
 
 export_globalconf ${ZENGLOBALCONF} ${GLOBALCONF} "${ENVVARS_GCVARS}"
 rc=$?
