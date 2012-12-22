@@ -221,7 +221,7 @@ chmod 0775 $ZENHOME/bin/* || die "bin perm normalization"
 chown root:zenoss $ZENHOME/bin/nmap $ZENHOME/bin/pyraw $ZENHOME/bin/zensocket || die "nmap/praw owner fail"
 chmod 04750 $ZENHOME/bin/nmap $ZENHOME/bin/pyraw $ZENHOME/bin/zensocket || die "nmap/praw suid root fail"
 # security fix - don't expose passwords to people who shouldn't see it:
-chmod o-rwx $ZENHOME/etc || die "security fix fail"
+chmod -R o-rwx $ZENHOME/etc || die "security fix fail"
 
 echo "Done!"
 
