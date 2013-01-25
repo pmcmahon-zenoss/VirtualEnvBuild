@@ -8,7 +8,8 @@ die() {
 help() {
 cat << EOF
 $0: 
-    use svn to create a source tarball of a Zenoss release, branch or tag.
+    use svn to create a source tarball of a Zenoss release, branch or tag in
+    the current working directory.
 
 Usage:
 
