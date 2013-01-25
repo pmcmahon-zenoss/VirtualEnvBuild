@@ -3,6 +3,7 @@ ORIG_DIR=`pwd`
 BUILDDIR=$ORIG_DIR/Build
 rm -rf $BUILDDIR
 [ -z "$MAKEOPTS" ] && MAKEOPTS="-j$(cat /proc/cpuinfo | grep -c vendor_id)"
+
 ZENHOME=/opt/zenoss4
 PYTHON_VERSION=2.7
 PYTHON=python${PYTHON_VERSION}
@@ -11,13 +12,18 @@ VIRTUALENV_PROG=virtualenv-$PYTHON_VERSION
 
 # this will vary based on tarball used:
 
-A=zenoss-core-trunk-20121219.tar.xz
-SRCDIR=$BUILDDIR/core
-REQUIREMENTS=requirements.txt.trunk
+if [ ! -e "$1" ]; then
+	die "Please specify archive to use as command-line argument 1."
+fi
 
-#A=zenoss-core-4.2.x-stable-20121219.tar.xz
-#SRCDIR=$BUILDDIR/zenoss-4.2.x
-#REQUIREMENTS=requirements.txt.stable
+if [ ! -e "$2" ]; then
+	die "Please specify requirements.txt file as argument 2."
+fi
+
+A=$1
+# expect source archive to have a directory inside with the same name, minus .tar.xz:
+SRCDIR=$BUILDDIR/${1%%.tar.*}
+REQUIREMENTS=$2
 
 INSTDIR=$SRCDIR/inst
 export INSTDIR
@@ -60,9 +66,25 @@ tar xvf $A -C $BUILDDIR || die "source tar extract fail"
 # Install the zope/python dependancies for the app.
 cp $REQUIREMENTS $BUILDDIR/requirements.txt
 sed -i -e "s|##INST##|$INSTDIR|g" $BUILDDIR/requirements.txt || die "couldn't sed tweak requirements.txt"
+# auto-detect versions of archives in all source files... replace ##V## in the requirements.txt file with
+# the version of the file from the archive:
+
+sed -e "/##V##/d" $BUILDDIR/requirements.txt > $BUILDDIR/requirements.txt.autodetect
+for line in $(grep "##V##" $BUILDDIR/requirements.txt); do
+	myp=${line/#file:/}
+	myp=${myp%/*}
+	# remove path info:
+	mya=${line##*/}
+	mya="${mya/\#\#V##/*}"
+	mya=$(ls $myp/$mya)
+	if [ ! -e "$mya" ]; then
+		die "I am having trouble auto-detecting the version of this line from requirements.txt: $line"
+	fi
+	echo "file:"$mya >> $BUILDDIR/requirements.txt.autodetect
+done
 
 #pip should be found in the virtual environments path easily at this point
-pip install -r $BUILDDIR/requirements.txt || die "pip failure"
+pip install -r $BUILDDIR/requirements.txt.autodetect || die "pip failure"
 
 # Reactivate the virtual environment to update the PATH
 source $VIRTUALENV/bin/activate || die "activate fail"
