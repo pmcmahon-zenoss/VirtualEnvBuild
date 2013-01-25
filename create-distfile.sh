@@ -28,7 +28,7 @@ Examples:
 
 $ $0 trunk
 
-This will create a an archive named zenoss-trunk-20130101.tar.xz containing a
+This will create a an archive named zenoss-dev-20130101.tar.xz containing a
 trunk svn checkout.
 
 $ $0 branch 4.2.x
@@ -59,7 +59,7 @@ timestamp=$(date +%Y%m%d)
 if [ "$1" = "trunk" ]; then
 	# trunk build
 	[ "$internal" = "yes" ] && branch="trunk/core" || branch="trunk"
-	archive_name="zenoss-trunk-$timestamp"
+	archive_name="zenoss-dev-$timestamp"
 	# archive will be named zenoss-trunk-20130101.tar.xz
 elif [ "$1" = "branch" ]; then
 	if [ "$2" = "" ]; then
@@ -67,7 +67,7 @@ elif [ "$1" = "branch" ]; then
 	fi
 	# stable branch build, first arg is "stable", second is "4.2.x"
 	[ "$internal" = "yes" ] && branch="branches/core/zenoss-$2" || branch="branches/zenoss-$2"
-	archive_name="zenoss-branch-$2-$timestamp"
+	archive_name="zenoss-stable-$2-$timestamp"
 	# archive will be named zenoss-stable-4.2.x-20130101.tar.xz
 elif [ "$1" = "tag" ]; then
 	if [ "$2" = "" ]; then
