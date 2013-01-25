@@ -29,17 +29,17 @@ Examples:
 $ $0 trunk
 
 This will create a an archive named zenoss-dev-20130101.tar.xz containing a
-trunk svn checkout.
+trunk svn export.
 
 $ $0 branch 4.2.x
 
 This will create an archive named zenoss-branch-4.2.x-20130101.tar.xz
-containing a branch svn checkout, in this case from the stable 4.2.x branch.
+containing a branch svn export, in this case from the stable 4.2.x branch.
 
 $ $0 tag 4.2.3
 
 This will create an archive named zenoss-release-4.2.3.tar.xz containing
-a tag 4.2.3 svn checkout -- the 4.2.3 release archive. The timestamp is
+a tag 4.2.3 svn export -- the 4.2.3 release archive. The timestamp is
 not included in the archive name because the tag should not change.
 
 EOF
@@ -80,11 +80,13 @@ elif [ "$1" = "tag" ]; then
 else
 	help && exit 1
 fi
-
+if [ -e "$archive_name.tar.xz" ]; then
+	die "Archive $archive_name.tar.xz already exists. Not creating new archive."
+fi
 CURDIR=$(pwd)
 TMPDIR=/var/tmp/$0.$$
 install -d $TMPDIR || die "tmpdir create"
-svn co $url/$branch $TMPDIR/$archive_name || die "svn fail"
+svn export $url/$branch $TMPDIR/$archive_name || die "svn fail"
 echo "Creating $CURDIR/$archive_name.tar.xz..."
 tar cJvf $CURDIR/$archive_name.tar.xz -C $TMPDIR $archive_name || die "tar fail"
 echo 'Cleaning up temp dir...'
