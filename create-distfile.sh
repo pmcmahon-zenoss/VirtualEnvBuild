@@ -12,9 +12,17 @@ $0:
 
 Usage:
 
+Create tarballs from public svn:
+
     $0 trunk
     $0 branch [BRANCH_VERSION]
     $0 tag [TAG_VERSION]
+
+Create tarballs from internal (Zenoss, Inc.) svn:
+
+    $0 internal trunk
+    $0 internal branch [BRANCH_VERSION]
+    $0 internal tag [TAG_VERSION]
 
 Examples:
 
@@ -36,11 +44,21 @@ not included in the archive name because the tag should not change.
 
 EOF
 }
+
+if [ "$1" = "internal" ]; then
+	url="http://dev.zenoss.com/svnint"	
+	internal="yes"
+	shift
+else
+	url="http://dev.zenoss.org/svn/"
+	internal="no"
+fi
+
 timestamp=$(date +%Y%m%d)
 
 if [ "$1" = "trunk" ]; then
 	# trunk build
-	branch="trunk/core"
+	[ "$internal" = "yes" ] && branch="trunk/core" || branch="trunk"
 	archive_name="zenoss-trunk-$timestamp"
 	# archive will be named zenoss-trunk-20130101.tar.xz
 elif [ "$1" = "branch" ]; then
@@ -48,7 +66,7 @@ elif [ "$1" = "branch" ]; then
 		die "Please specify a branch version as second argument, such as 4.2.x."
 	fi
 	# stable branch build, first arg is "stable", second is "4.2.x"
-	branch="branches/core/zenoss-$2"
+	[ "$internal" = "yes" ] && branch="branches/core/zenoss-$2" || branch="branches/zenoss-$2"
 	archive_name="zenoss-branch-$2-$timestamp"
 	# archive will be named zenoss-stable-4.2.x-20130101.tar.xz
 elif [ "$1" = "tag" ]; then
@@ -56,12 +74,12 @@ elif [ "$1" = "tag" ]; then
 		die "Please specify a tag version as a second argument, such as 4.2.3."
 	fi
 	# tag build - aka "4.2.3"
-	branch="tags/core/zenoss-$2"
+	[ "$internal" = "yes" ] && branch="tags/core/zenoss-$2" || branch="tags/zenoss-$2"
 	archive_name="zenoss-release-$2"
 	# archive will be named zenoss-release-4.2.3.tar.xz
 else
 	help && exit 1
 fi
 
-svn co http://dev.zenoss.com/svnint/$branch $archive_name || die "svn fail"
+svn co $url/$branch $archive_name || die "svn fail"
 tar cJvf $archive_name.tar.xz $archive_name || die "tar fail"
