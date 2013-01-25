@@ -9,19 +9,15 @@ PYTHON=python${PYTHON_VERSION}
 VIRTUALENV=$ZENHOME/venv
 VIRTUALENV_PROG=virtualenv-$PYTHON_VERSION
 
-LIBSMI_PACKAGE=libsmi-0.4.8.tar.gz
-
 # this will vary based on tarball used:
 
 A=zenoss-core-trunk-20121219.tar.xz
 SRCDIR=$BUILDDIR/core
 REQUIREMENTS=requirements.txt.trunk
-NMAP_PACKAGE=nmap-6.01.tgz
 
 #A=zenoss-core-4.2.x-stable-20121219.tar.xz
 #SRCDIR=$BUILDDIR/zenoss-4.2.x
 #REQUIREMENTS=requirements.txt.stable
-#NMAP_PACKAGE=nmap-5.51.4.tgz
 
 INSTDIR=$SRCDIR/inst
 export INSTDIR
@@ -162,7 +158,7 @@ sed -i -e 's|PYTHON=$ZENHOME/bin/python|PYTHON='`which $PYTHON`'|g' $ZENHOME/bin
 if [ ! -e $ZENHOME/bin/nmap ]
 then
     cd $BUILDDIR
-    tar -xvf $INSTDIR/externallibs/$NMAP_PACKAGE || die "nmap extract fail"
+    tar -xvf $INSTDIR/externallibs/nmap-* || die "nmap extract fail"
     cd $(ls -lda nmap*|grep ^drwx|awk '{print $9}') || die "nmap cd fail"
     ./configure --prefix=$ZENHOME --without-zenmap --without-ndiff || die "nmap configure fail"
     make ${MAKEOPTS} || die "nmap build fail"
@@ -178,9 +174,9 @@ fi
 if [ ! -e $ZENHOME/bin/smidump ]
 then
     rm -rf $BUILDDIR/libsmi*
-    cp $INSTDIR/externallibs/$LIBSMI_PACKAGE $BUILDDIR
+    cp $INSTDIR/externallibs/libsmi-* $BUILDDIR
     cd $BUILDDIR
-    tar xvf $LIBSMI_PACKAGE || die "libsmi extract fail"
+    tar xvf libsmi-* || die "libsmi extract fail"
     cd $(ls -lda libsmi*|grep ^drwx|awk '{print $9}') || die "libsmi cd fail"
     ./configure --prefix=$ZENHOME || die "libsmi configure fail"
     make ${MAKEOPTS} || die "libsmi build fail"
