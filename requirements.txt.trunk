@@ -117,7 +117,6 @@ file:##INST##/externallibs/zenoss.extjs-##V##.tar.gz
 file:##INST##/externallibs/Yapps-##V##.tar.gz
 file:##INST##/externallibs/pynetsnmp-##V##.tar.gz
 file:##INST##/externallibs/petehunt-PyMySQL-##V##.zip
-file:##INST##/zenoss-version
 file:##INST##/icmpecho
 file:##INST##/externallibs/celery-##V##.tar.gz
 file:##INST##/externallibs/greenlet-##V##.tar.gz
