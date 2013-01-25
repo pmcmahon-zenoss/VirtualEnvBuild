@@ -81,5 +81,12 @@ else
 	help && exit 1
 fi
 
-svn co $url/$branch $archive_name || die "svn fail"
-tar cJvf $archive_name.tar.xz $archive_name || die "tar fail"
+CURDIR=$(pwd)
+TMPDIR=/var/tmp/$0.$$
+install -d $TMPDIR || die "tmpdir create"
+svn co $url/$branch $TMPDIR/$archive_name || die "svn fail"
+echo "Creating $CURDIR/$archive_name.tar.xz..."
+tar cJvf $CURDIR/$archive_name.tar.xz -C $TMPDIR $archive_name || die "tar fail"
+echo 'Cleaning up temp dir...'
+rm -rf $TMPDIR 
+echo "Done!"
