@@ -52,7 +52,7 @@ mkdir -p $DESTDIR/$VIRTUAL_ENV || die "Couldn't create $VIRTUAL_ENV"
 if [ ! -e $DESTDIR/$VIRTUAL_ENV/bin/activate ]
 then
     try mkdir -p $DESTDIR/$VIRTUAL_ENV
-    virtualenv-$PYTHON_VERSION $DESTDIR/$VIRTUAL_ENV || die "virtualenv fail"
+    virtualenv-$PYTHON_VERSION --distribute $DESTDIR/$VIRTUAL_ENV || die "virtualenv fail"
 fi
 
 #Change the paths and add a ZENHOME env variable:
@@ -160,7 +160,7 @@ then
     make DESTDIR=$DESTDIR install || die "protobuf install fail"
 # TODO: CHECK SETUP.PY INSTALL::::
     cd python/
-    python setup.py install || die "protobuf python install fail"
+    python setup.py --distribute install || die "protobuf python install fail"
 fi
 
 #Make zensocket
@@ -224,7 +224,7 @@ cd $SRCDIR/protocols/
 PATH=$DESTDIR/$ZENHOME/bin/:${PATH} LD_LIBRARY_PATH=$DESTDIR/$ZENHOME/lib mvn -f java/pom.xml clean install || die "java protocol build fail"
 PATH=$DESTDIR/$ZENHOME/bin/:${PATH} LD_LIBRARY_PATH=$DESTDIR/$ZENHOME/lib make -C python clean build || die "python protocol build fail"
 cd python/
-python setup.py install | die "python protocol install fail"
+python setup.py --distribute install | die "python protocol install fail"
 
 #compile zep
 try cd $SRCDIR/zep
