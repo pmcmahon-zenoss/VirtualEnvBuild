@@ -164,8 +164,10 @@ then
     make ${MAKEOPTS} || die "protobuf build fail"
     make DESTDIR=$DESTDIR install || die "protobuf install fail"
 # TODO: CHECK SETUP.PY INSTALL::::
+    #Activate the virtual en
     cd python/
-    python setup.py --distribute install || die "protobuf python install fail"
+    source $DESTDIR/$VIRTUAL_ENV/bin/activate || die "couldn't activate virtualenv"
+    $PYTHON setup.py --distribute install || die "protobuf python install fail"
 fi
 
 #Make zensocket
@@ -229,7 +231,7 @@ cd $SRCDIR/protocols/
 PATH=$DESTDIR/$ZENHOME/bin/:${PATH} LD_LIBRARY_PATH=$DESTDIR/$ZENHOME/lib mvn -f java/pom.xml clean install || die "java protocol build fail"
 PATH=$DESTDIR/$ZENHOME/bin/:${PATH} LD_LIBRARY_PATH=$DESTDIR/$ZENHOME/lib make -C python clean build || die "python protocol build fail"
 cd python/
-python setup.py --distribute install | die "python protocol install fail"
+$PYTHON setup.py --distribute install | die "python protocol install fail"
 
 #compile zep
 try cd $SRCDIR/zep
