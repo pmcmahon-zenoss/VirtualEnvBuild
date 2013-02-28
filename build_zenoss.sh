@@ -1,13 +1,13 @@
 #!/bin/bash
 
 die() {
-	echo $*
-	exit 1
+echo $*
+exit 1
 }
 
 try() {
-	"$@"
-	[ $? -ne 0 ] && echo Failure: $* && exit 1
+"$@"
+[ $? -ne 0 ] && echo Failure: $* && exit 1
 }
 
 ORIG_DIR=`pwd`
@@ -22,16 +22,18 @@ PYTHON=python${PYTHON_VERSION}
 # this will vary based on tarball used:
 
 if [ ! -e "$1" ]; then
-	die "Please specify archive to use as command-line argument 1."
+die "Please specify archive to use as command-line argument 1."
 fi
 
 if [ ! -e "$2" ]; then
-	die "Please specify requirements.txt file as argument 2."
+die "Please specify requirements.txt file as argument 2."
 fi
 
 A=$1
+# strip path info if provided:
+A_NAME="${A##*/}"
 # expect source archive to have a directory inside with the same name, minus .tar.xz:
-SRCDIR=$BUILDDIR/${1%%.tar.*}
+SRCDIR=$BUILDDIR/${A_NAME%%.tar.*}
 DESTDIR=$ORIG_DIR/image
 REQUIREMENTS=$2
 INSTDIR=$SRCDIR/inst
@@ -51,8 +53,8 @@ mkdir -p $DESTDIR/$VIRTUAL_ENV || die "Couldn't create $VIRTUAL_ENV"
 # Create a virtual environment if it doesnt already exist
 if [ ! -e $DESTDIR/$VIRTUAL_ENV/bin/activate ]
 then
-    try mkdir -p $DESTDIR/$VIRTUAL_ENV
-    virtualenv-$PYTHON_VERSION --distribute $DESTDIR/$VIRTUAL_ENV || die "virtualenv fail"
+try mkdir -p $DESTDIR/$VIRTUAL_ENV
+virtualenv-$PYTHON_VERSION --distribute $DESTDIR/$VIRTUAL_ENV || die "virtualenv fail"
 fi
 
 #Change the paths and add a ZENHOME env variable:
@@ -70,24 +72,27 @@ tar xvf $A -C $BUILDDIR || die "source tar extract fail"
 ./patch.sh || die "patch fail" 
 
 # The requirements.txt will be unique per branch
-# Install the zope/python dependancies for the app.
+# Install the zope/python dependencies for the app.
 cp $REQUIREMENTS $BUILDDIR/requirements.txt
 sed -i -e "s|##INST##|$INSTDIR|g" $BUILDDIR/requirements.txt || die "couldn't sed tweak requirements.txt"
 # auto-detect versions of archives in all source files... replace ##V## in the requirements.txt file with
 # the version of the file from the archive:
 
+# start with stub of all non-autodetected version lines:
 sed -e "/##V##/d" $BUILDDIR/requirements.txt > $BUILDDIR/requirements.txt.autodetect
+# now iteratively add auto-detected versions:
 for line in $(grep "##V##" $BUILDDIR/requirements.txt); do
-	myp=${line/#file:/}
-	myp=${myp%/*}
-	# remove path info:
-	mya=${line##*/}
-	mya="${mya/\#\#V##/*}"
-	mya=$(ls $myp/$mya)
-	if [ ! -e "$mya" ]; then
-		die "I am having trouble auto-detecting the version of this line from requirements.txt: $line"
-	fi
-	echo "file:"$mya >> $BUILDDIR/requirements.txt.autodetect
+# get path info:
+myp=${line/#file:/}
+myp=${myp%/*}
+# remove path info:
+mya=${line##*/}
+mya="${mya/\#\#V##/*}"
+mya=$(ls $myp/$mya)
+if [ ! -e "$mya" ]; then
+	die "I am having trouble auto-detecting the version of this line from requirements.txt: $line"
+fi
+echo "file:"$mya >> $BUILDDIR/requirements.txt.autodetect
 done
 
 #pip should be found in the virtual environments path easily at this point
@@ -106,7 +111,7 @@ mkdir -p $DESTDIR/$ZENHOME/{backups,export,build,etc} || die "standard dir creat
 cd $INSTDIR/externallibs || die "cd fail"
 for i in $(ls Licenses.*)
 do
-    cp $i $DESTDIR/$ZENHOME || die "license $i fail"
+cp $i $DESTDIR/$ZENHOME || die "license $i fail"
 done
 cp $INSTDIR/License.zenoss $DESTDIR/$ZENHOME || die "license fail"
 
@@ -114,7 +119,7 @@ cp $INSTDIR/License.zenoss $DESTDIR/$ZENHOME || die "license fail"
 SITECUSTOMIZE=$DESTDIR/$VIRTUAL_ENV/lib/$PYTHON/sitecustomize.py
 if [ -f $SITECUSTOMIZE ]
 then
-    rm $SITECUSTOMIZE
+rm $SITECUSTOMIZE
 fi
 
 cat << EOF > $SITECUSTOMIZE || die "sitecustomize.py fail"
@@ -123,7 +128,7 @@ import warnings
 warnings.filterwarnings('ignore', '.*', DeprecationWarning)
 sys.setdefaultencoding('utf-8')
 if os.environ.get('ZENHOME'):
-    site.addsitedir(os.path.join(os.getenv('ZENHOME'), 'ZenPacks'))
+site.addsitedir(os.path.join(os.getenv('ZENHOME'), 'ZenPacks'))
 EOF
 
 # Copy in conf files.
