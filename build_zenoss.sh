@@ -117,18 +117,13 @@ cp $INSTDIR/License.zenoss $DESTDIR/$ZENHOME || die "license fail"
 
 #Setup the sitecustomize file
 SITECUSTOMIZE=$DESTDIR/$VIRTUAL_ENV/lib/$PYTHON/sitecustomize.py
-if [ -f $SITECUSTOMIZE ]
-then
-rm $SITECUSTOMIZE
-fi
-
 cat << EOF > $SITECUSTOMIZE || die "sitecustomize.py fail"
 import sys, os, site
 import warnings
 warnings.filterwarnings('ignore', '.*', DeprecationWarning)
 sys.setdefaultencoding('utf-8')
 if os.environ.get('ZENHOME'):
-site.addsitedir(os.path.join(os.getenv('ZENHOME'), 'ZenPacks'))
+	site.addsitedir(os.path.join(os.getenv('ZENHOME'), 'ZenPacks'))
 EOF
 
 # Copy in conf files.
