@@ -61,7 +61,7 @@ fi
 # Ensure VIRTUAL_ENV is set to something like /opt/zenoss4/venv (it won't be by default)
 # Ensure VIRTUAL_ENV_PREFIX can be used to move venv inside an image directory.
 
-sed -i -e "s|^VIRTUAL_ENV=.*|VIRTUAL_ENV=$VIRTUAL_ENV|" -e 's|PATH="$VIRTUAL_ENV/bin:$PATH"|PATH="$VIRTUAL_ENV_PREFIX$VIRTUAL_ENV/../bin:$VIRTUAL_ENV_PREFIX$VIRTUAL_ENV/bin:$PATH"\nZENHOME='$ZENHOME'\nexport ZENHOME|g' $DESTDIR/$VIRTUAL_ENV/bin/activate || die "path fix fail"
+sed -i -e "s|^VIRTUAL_ENV=.*|VIRTUAL_ENV=$VIRTUAL_ENV|" -e 's|PATH="$VIRTUAL_ENV/bin:$PATH"|PATH="$VIRTUAL_ENV_PREFIX$VIRTUAL_ENV/bin:$PATH"\nZENHOME='$ZENHOME'\nexport ZENHOME|g' $DESTDIR/$VIRTUAL_ENV/bin/activate || die "path fix fail"
 
 #Activate the virtual env
 source $DESTDIR/$VIRTUAL_ENV/bin/activate || die "couldn't activate virtualenv"
@@ -164,9 +164,7 @@ then
     make ${MAKEOPTS} || die "protobuf build fail"
     make DESTDIR=$DESTDIR install || die "protobuf install fail"
 # TODO: CHECK SETUP.PY INSTALL::::
-    #Activate the virtual en
     cd python/
-    source $DESTDIR/$VIRTUAL_ENV/bin/activate || die "couldn't activate virtualenv"
     $PYTHON setup.py --distribute install || die "protobuf python install fail"
 fi
 
