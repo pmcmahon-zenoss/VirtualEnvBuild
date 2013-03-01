@@ -160,7 +160,7 @@ then
     make DESTDIR=$DESTDIR install || die "protobuf install fail"
 # TODO: CHECK SETUP.PY INSTALL::::
     cd python/
-    $PYTHON setup.py --distribute install || die "protobuf python install fail"
+    $PYTHON setup.py install || die "protobuf python install fail"
 fi
 
 #Make zensocket
