@@ -218,7 +218,8 @@ fi
 ##### mvn/oracle dependancies below ####
 # Compile the java pieces
 cd $SRCDIR/java/
-mvn clean install || die "core java build fail"
+install -d $BUILDDIR/maven_repo || die "maven local repo fail"
+mvn -Dmaven.repo.local=$BUILDDIR/maven_repo clean install || die "core java build fail"
 # Compile the protocols
 cd $SRCDIR/protocols/
 PATH=$DESTDIR/$ZENHOME/bin/:${PATH} LD_LIBRARY_PATH=$DESTDIR/$ZENHOME/lib mvn -f java/pom.xml clean install || die "java protocol build fail"
