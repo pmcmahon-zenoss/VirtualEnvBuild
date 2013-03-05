@@ -1,35 +1,40 @@
 #!/bin/bash
 
 # This script takes an original source tarball, applies zenoss patches to it, and re-compresses it, and
-# copies it to the Build/ directory.
+# copies it to the Build/ directory. Source tarball filenames are supplied via the command-line. The
+# first argument is a relative path to search for files. Use "." for cwd.
 
-# With no arguments, it will operate on all tarballs. If arguments are specified, it will operate on
-# tarballs that have matching names. (ie. protobuf)
+die() {
+echo $*
+exit 1
+}
+
+try() {
+"$@"
+[ $? -ne 0 ] && echo Failure: $* && exit 1
+}
 
 # Smart extract function
 extract () {
   if [ $# != 1 ];
   then
-    echo
-    echo "  Usage: extract [COMPRESSED_FILENAME]"
-    echo
+    die "  Usage: extract [COMPRESSED_FILENAME]"
   else
     if [ -f $1 ];
     then
       case $1 in
-        *.tar)       tar -xf  $1  ;;
-        *.tgz)       tar -xzf $1  ;;
-        *.tar.gz)    tar -xzf $1  ;;
-        *.tbz2)      tar -xjf $1  ;;
-        *.tar.bz2)   tar -xjf $1  ;;
-        *.gz)        gunzip    $1  ;;
-        *.bz2)       bunzip2   $1  ;;
-        *.zip)       unzip -qq     $1  ;;
-        *)           echo "  '$1' file type unknown" ;;
+        *.tar)       try tar -xf  $1  ;;
+        *.tgz)       try tar -xzf $1  ;;
+        *.tar.gz)    try tar -xzf $1  ;;
+        *.tbz2)      try tar -xjf $1  ;;
+        *.tar.bz2)   try tar -xjf $1  ;;
+        *.gz)        try gunzip    $1  ;;
+        *.bz2)       try bunzip2   $1  ;;
+        *.zip)       try unzip -qq     $1  ;;
+        *)           die "  '$1' file type unknown" ;;
       esac
     else
-      echo "  '$1' is not a regular file"
-      echo
+      die "  '$1' is not a regular file"
     fi
   fi
 }
@@ -38,57 +43,47 @@ extract () {
 compress() {
   if [ $# != 2 ];
   then
-    echo
-    echo "  Usage: compress [COMPRESSED_FILENAME] [SOURCE_DIRECTORY]"
-    echo
+    die "  Usage: compress [COMPRESSED_FILENAME] [SOURCE_DIRECTORY]"
   else
     case $1 in
-      *.tar.bz2)    tar -cjPf $1 $2 ;;
-      *.tar.gz)     tar -czPf $1 $2 ;;
-      *.tgz)        tar -czPf $1 $2 ;;
-      *.zip)        zip -qr      $1 $2  ;;
-      *)            echo "  '$1' file type unknown" ;;
+      *.tar.bz2)    try tar -cjPf $1 $2 ;;
+      *.tar.gz)     try tar -czPf $1 $2 ;;
+      *.tgz)        try tar -czPf $1 $2 ;;
+      *.zip)        try zip -qr      $1 $2  ;;
+      *)            die "  '$1' file type unknown" ;;
     esac
   fi
 }
-SRC_REPO=$INSTDIR/externallibs
+
 DST_REPO=`pwd`/Build/
-if [ "$*" = "" ]; then
-	# no args - create archives for all patched packages in $INSTDIR/externallibs:
-	patch_packages=$(for patch in $(cd $SRC_REPO; ls *patch*); do echo ${patch}|perl -ne 'if (m/(.*)-r?\d/g){print "$1\n"}'; done|sort|uniq)
-else
-	# args - pattern match to pick individual archives only. "patch.sh protobuf" will look for protobuf*.tar.* to patch:
-	patch_packages=""
-	for p in $*; do
-		echo -n "Looking for $p..."
-		found_pkgs="$(cd $SRC_REPO; ls ${p}*.tar.*)"
-		[ -z "$found_pkgs" ] && die "Couldn't find any match for $p. Exiting."
-		echo "$found_pkgs"
-		patch_packages="$patch_packages $found_pkgs"
-	done
-fi
 
 if [ -d patch ]
 then
    rm -rf patch
 fi
-
-for package in $patch_packages
+rel_path=$1
+echo "Relative path: $rel_path"
+shift
+for archive_path in $*
 do
-   # do not create patched file if it already exists...
-   [ -e $DST_REPO/$package ] && echo "$package exists in $DST_REPO, skipping." && continue 
-   echo -n "Creating patched version of $package in $DST_REPO..."
+   archive_path="$(ls -d $rel_path/$archive_path)"
+   [ -d $archive_path ] && echo "Is directory: $archive_path, skipping..." && continue
+   archive_basepath="${archive_path%/*}"
+   archive_name="${archive_path##*/}"
+   archive_noext="${archive_name%*.zip}"
+   archive_noext="${archive_noext%*.tar.*}"
+   [ ! -e $archive_path ] && die "Does not exist: $archive_path"
+   echo "Processing archive $archive_name, applying any patches in $archive_basepath..."
    mkdir patch
-   cp $SRC_REPO/$package* patch
+   cp $archive_path patch
    cd patch
-   file=$(ls|grep -v patch)
-   extract $file
+   extract $archive_path
    directory=$(ls -l|grep ^d| ls -l|grep ^d|awk '{print $9}')
-   for patch in $(ls *.patch* 2>/dev/null); do echo "Applying patch ${patch}";patch -d $directory -p0 < ${patch}; done
-   rm $file
-   compress $file $directory
-   mv $file $DST_REPO 
+   for patch in $(ls $archive_basepath/${archive_noext}*.patch* 2>/dev/null); do 
+   	echo "Applying patch ${patch}"
+	patch -d $directory -p0 < ${patch} || die "patch failed: $patch"
+   done
+   compress $DST_REPO/$archive_name $directory
    cd ..
    rm -r patch
-   echo " done!"
 done

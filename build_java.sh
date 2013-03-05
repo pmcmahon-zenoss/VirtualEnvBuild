@@ -13,6 +13,7 @@ try() {
 ORIG_DIR=`pwd`
 BUILDDIR=$ORIG_DIR/Build
 rm -rf $BUILDDIR
+[ -z "$MAKEOPTS" ] && MAKEOPTS="-j$(cat /proc/cpuinfo | grep -c vendor_id)"
 
 ZENHOME=/opt/zenoss4
 
@@ -34,6 +35,19 @@ export ZENHOME
 install -d $BUILDDIR || die
 
 tar xvf $A -C $BUILDDIR || die "source tar extract fail"
+
+# install some directory trees as-is from the source archive:
+cp -a $SRCDIR/bin $DESTDIR/$ZENHOME/bin || die "bin install fail"
+cp -a $SRCDIR/Products $DESTDIR/$ZENHOME/Products || die "products install fail"
+cp -a $SRCDIR/inst/fs $DESTDIR/$ZENHOME/extras || die "extras install fail"
+# Create some required directories:
+mkdir -p $DESTDIR/$ZENHOME/{backups,export,build,etc} || die "standard dir create fail"
+# Copy the license
+for i in $(cd $INSTDIR/externallibs; ls Licenses.*)
+do
+cp $INSTDIR/externallibs/$i $DESTDIR/$ZENHOME || die "license $i fail"
+done
+cp $INSTDIR/License.zenoss $DESTDIR/$ZENHOME || die "license fail"
 
 # This creates a patched version of the protobuf tarball in Build/, based on the original in Build/inst/externallibs:
 ./patch.sh protobuf || die "patch protobuf fail"

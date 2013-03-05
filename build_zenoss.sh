@@ -68,33 +68,29 @@ source $DESTDIR/$VIRTUAL_ENV/bin/activate || die "couldn't activate virtualenv"
 
 tar xvf $A -C $BUILDDIR || die "source tar extract fail"
 
-# patch some packages. this creates new archives in /Build/ containing our patches, based on originals in
-# /Build/inst/externallibs...
-./patch.sh || die "patch fail" 
-
-# The requirements.txt will be unique per branch
-# Install the zope/python dependencies for the app.
 cp $REQUIREMENTS $BUILDDIR/requirements.txt
-# auto-detect versions of archives in all source files... replace ##V## in the requirements.txt file with
-# the version of the file from the archive:
-# start with stub of all non-autodetected version lines:
-sed -e "/##V##/d" $BUILDDIR/requirements.txt > $BUILDDIR/requirements.txt.autodetect
+export BUNDLED_ARCHIVES="$( grep '^inst/' $BUILDDIR/requirements.txt)"
+
+# patch some packages. this creates new archives in Build/ containing our patches, based on originals in /Build/inst/externallibs:
+./patch.sh $SRCDIR $BUNDLED_ARCHIVES || die "patch fail" 
+
+# copy other pip requirements into their expected location in Build/
+cp -a $INSTDIR/icmpecho $BUILDDIR/ || die "icmpecho fail"
+# no patches for this since we maintain it:
+cp -a $INSTDIR/externallibs/zenpacksupport*.tar.gz $BUILDDIR/ || die "zenpacksupport fail"
+cp -a $INSTDIR/externallibs/ZSI*.tar.gz $BUILDDIR/ || die "zenpacksupport fail"
+# These requirements will now be found by our requirements.txt file, which we will finalize now:
+
+# Automatically determine versions of python dependencies bundled with Zenoss source and update requirements.txt to build these versions:
+sed -e "/^\inst/d" $BUILDDIR/requirements.txt > $BUILDDIR/requirements.txt.autodetect
 # now iteratively add auto-detected versions:
-for line in $(grep "##V##" $BUILDDIR/requirements.txt); do
-# get path info:
-myp=${line/#file:/}
-myp=${myp%/*}
-# remove path info:
-mya=${line##*/}
-mya="${mya/\#\#V##/*}"
-mya=$(ls $myp/$mya)
-if [ ! -e "$mya" ]; then
-	die "I am having trouble auto-detecting the version of this line from requirements.txt: $line"
-fi
-echo "file:"$mya >> $BUILDDIR/requirements.txt.autodetect
+for line in $(grep "^inst/" $BUILDDIR/requirements.txt); do
+	line="$(ls -d $SRCDIR/$line)"
+	[ ! -e "$line" ] && die "Can't find $line. Exiting."
+	echo $line >> $BUILDDIR/requirements.txt.autodetect
 done
 
-#pip should be found in the virtual environments path easily at this point
+# Now, use pip to build all python parts:
 pip install -r $BUILDDIR/requirements.txt.autodetect || die "pip failure"
 
 # Reactivate the virtual environment to update the PATH
@@ -107,10 +103,9 @@ cp -a $SRCDIR/inst/fs $DESTDIR/$ZENHOME/extras || die "extras install fail"
 # Create some required directories:
 mkdir -p $DESTDIR/$ZENHOME/{backups,export,build,etc} || die "standard dir create fail"
 # Copy the license
-cd $INSTDIR/externallibs || die "cd fail"
-for i in $(ls Licenses.*)
+for i in $(cd $INSTDIR/externallibs; ls Licenses.*)
 do
-cp $i $DESTDIR/$ZENHOME || die "license $i fail"
+cp $INSTDIR/externallibs/$i $DESTDIR/$ZENHOME || die "license $i fail"
 done
 cp $INSTDIR/License.zenoss $DESTDIR/$ZENHOME || die "license fail"
 
