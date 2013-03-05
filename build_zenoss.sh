@@ -217,22 +217,21 @@ fi
 
 ##### mvn/oracle dependancies below ####
 # Compile the java pieces
+MVN_REPO=$BUILDDIR/maven_repo
+install -d $MVN_REPO
+MVN_OPTS="-Dmaven.repo.local=$MVN_REPO"
 cd $SRCDIR/java/
-HOME_BAK=$HOME
-export HOME=$BUILDDIR/maven_home
-install -d $HOME || die "fake home fail"
-mvn clean install || die "core java build fail"
-export HOME=$HOME_BAK
+mvn $MVN_OPTS clean install || die "core java build fail"
 # Compile the protocols
 cd $SRCDIR/protocols/
-PATH=$DESTDIR/$ZENHOME/bin/:${PATH} LD_LIBRARY_PATH=$DESTDIR/$ZENHOME/lib mvn -f java/pom.xml clean install || die "java protocol build fail"
+PATH=$DESTDIR/$ZENHOME/bin/:${PATH} LD_LIBRARY_PATH=$DESTDIR/$ZENHOME/lib mvn $MVN_OPTS -f java/pom.xml clean install || die "java protocol build fail"
 PATH=$DESTDIR/$ZENHOME/bin/:${PATH} LD_LIBRARY_PATH=$DESTDIR/$ZENHOME/lib make -C python clean build || die "python protocol build fail"
 cd python/
 $PYTHON setup.py --distribute install | die "python protocol install fail"
 
 #compile zep
 try cd $SRCDIR/zep
-PATH=$DESTDIR/$ZENHOME/bin/:${PATH} LD_LIBRARY_PATH=$DESTDIR/$ZENHOME/lib mvn clean install || die "zep build fail"
+PATH=$DESTDIR/$ZENHOME/bin/:${PATH} LD_LIBRARY_PATH=$DESTDIR/$ZENHOME/lib mvn $MVN_OPTS clean install || die "zep build fail"
 
 #Install zep
 ZEPDIST=$(ls -1 $SRCDIR/zep/dist/target/zep-dist-*.tar.gz)
