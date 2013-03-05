@@ -68,16 +68,15 @@ source $DESTDIR/$VIRTUAL_ENV/bin/activate || die "couldn't activate virtualenv"
 
 tar xvf $A -C $BUILDDIR || die "source tar extract fail"
 
-# patch some packages.
+# patch some packages. this creates new archives in /Build/ containing our patches, based on originals in
+# /Build/inst/externallibs...
 ./patch.sh || die "patch fail" 
 
 # The requirements.txt will be unique per branch
 # Install the zope/python dependencies for the app.
 cp $REQUIREMENTS $BUILDDIR/requirements.txt
-sed -i -e "s|##INST##|$INSTDIR|g" $BUILDDIR/requirements.txt || die "couldn't sed tweak requirements.txt"
 # auto-detect versions of archives in all source files... replace ##V## in the requirements.txt file with
 # the version of the file from the archive:
-
 # start with stub of all non-autodetected version lines:
 sed -e "/##V##/d" $BUILDDIR/requirements.txt > $BUILDDIR/requirements.txt.autodetect
 # now iteratively add auto-detected versions:
