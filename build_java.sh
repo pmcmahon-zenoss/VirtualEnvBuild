@@ -11,43 +11,21 @@ try() {
 }
 
 ORIG_DIR=`pwd`
-BUILDDIR=$ORIG_DIR/Build
-rm -rf $BUILDDIR
-[ -z "$MAKEOPTS" ] && MAKEOPTS="-j$(cat /proc/cpuinfo | grep -c vendor_id)"
-
-ZENHOME=/opt/zenoss4
-
-if [ ! -e "$1" ]; then
-die "Please specify archive to use as command-line argument 1."
+ZENHOME=$1
+if [ -d "$2" ]; then
+	BUILDDIR=$2
+else
+	die "Please specify build directory as argument 2."
 fi
+
+[ -z "$MAKEOPTS" ] && MAKEOPTS="-j$(cat /proc/cpuinfo | grep -c vendor_id)"
 
 A=$1
 # strip path info if provided:
 A_NAME="${A##*/}"
 # expect source archive to have a directory inside with the same name, minus .tar.xz:
-SRCDIR=$BUILDDIR/${A_NAME%%.tar.*}
+SRCDIR="$BUILDDIR/zenoss-*"
 DESTDIR=$ORIG_DIR/image
-INSTDIR=$SRCDIR/inst
-export INSTDIR
-
-# These are currently paths inside /opt, need to change so we write to DESTDIR rather than these paths
-export ZENHOME
-install -d $BUILDDIR || die
-
-tar xvf $A -C $BUILDDIR || die "source tar extract fail"
-
-# install some directory trees as-is from the source archive:
-cp -a $SRCDIR/bin $DESTDIR/$ZENHOME/bin || die "bin install fail"
-cp -a $SRCDIR/Products $DESTDIR/$ZENHOME/Products || die "products install fail"
-cp -a $SRCDIR/inst/fs $DESTDIR/$ZENHOME/extras || die "extras install fail"
-# Create some required directories:
-mkdir -p $DESTDIR/$ZENHOME/{backups,export,build,etc} || die "standard dir create fail"
-# Copy the license
-for i in $(cd $INSTDIR/externallibs; ls Licenses.*)
-do
-cp $INSTDIR/externallibs/$i $DESTDIR/$ZENHOME || die "license $i fail"
-done
-cp $INSTDIR/License.zenoss $DESTDIR/$ZENHOME || die "license fail"
 
 # This is so maven and the python protocol install part can find both
 # the "protoc" command as well as the libprotobuf shared library:
@@ -75,9 +53,9 @@ ZEPDIST=$(ls -1 $SRCDIR/zep/dist/target/zep-dist-*.tar.gz)
 (cd $DESTDIR/$ZENHOME;tar zxvhf $ZEPDIST) || die "zepdist extract fail"
 
 # Compile the javascript , requires oracle java 1.6+
-cp $INSTDIR/externallibs/JSBuilder2.zip $BUILDDIR/
+cp $SRCDIR/inst/externallibs/JSBuilder2.zip $BUILDDIR/
 (cd $BUILDDIR/;unzip -o JSBuilder2.zip) || die "JSBuilder2 unzip fail"
-JSBUILDER=$BUILDDIR/JSBuilder2.jar DESTDIR=$DESTDIR ZENHOME=$ZENHOME $INSTDIR/buildjs.sh || die "JS compile failed"
+JSBUILDER=$BUILDDIR/JSBuilder2.jar DESTDIR=$DESTDIR ZENHOME=$ZENHOME $SRCDIR/inst/buildjs.sh || die "JS compile failed"
 
 echo "Setting permissions..."
 chown -R zenoss:zenoss $DESTDIR/$ZENHOME || die "Couldn't set permissions"
