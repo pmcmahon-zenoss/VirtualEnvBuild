@@ -1,3 +1,4 @@
 * patch zendmd to use virtualenv
 * add a pre-check for required binaries: xslt-config and mvn, svn, mysql_something, others?
 * test, tweak mkzenossintance
+* capture all of nmap deps in build process -- nmap build is pulling in stuff automatically via ./configure which is wrong.

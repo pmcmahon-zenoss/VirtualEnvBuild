@@ -49,20 +49,6 @@ cp $INSTDIR/externallibs/$i $DESTDIR/$ZENHOME || die "license $i fail"
 done
 cp $INSTDIR/License.zenoss $DESTDIR/$ZENHOME || die "license fail"
 
-# This creates a patched version of the protobuf tarball in Build/, based on the original in Build/inst/externallibs:
-./patch.sh protobuf || die "patch protobuf fail"
-
-# Compile protocol buffers - protoc is required by maven stuff, below...
-if [ ! -e $DESTDIR/$ZENHOME/bin/protoc ]
-then
-    cd $BUILDDIR
-    tar xvf protobuf*tar* || die "protobuf extract fail"
-    cd protobuf*
-    ./configure --prefix=$ZENHOME --enable-shared=yes --enable-static=no || die "protobuf configure fail"
-    make ${MAKEOPTS} || die "protobuf build fail"
-    make DESTDIR=$DESTDIR install || die "protobuf install fail"
-fi
-
 ##### mvn/oracle dependancies below ####
 # Compile the java pieces
 MVN_REPO=$BUILDDIR/maven_repo

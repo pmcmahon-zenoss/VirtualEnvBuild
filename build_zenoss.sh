@@ -25,17 +25,12 @@ if [ ! -e "$1" ]; then
 die "Please specify archive to use as command-line argument 1."
 fi
 
-if [ ! -e "$2" ]; then
-die "Please specify requirements.txt file as argument 2."
-fi
-
 A=$1
 # strip path info if provided:
 A_NAME="${A##*/}"
 # expect source archive to have a directory inside with the same name, minus .tar.xz:
 SRCDIR=$BUILDDIR/${A_NAME%%.tar.*}
 DESTDIR=$ORIG_DIR/image
-REQUIREMENTS=$2
 INSTDIR=$SRCDIR/inst
 export INSTDIR
 
@@ -68,30 +63,46 @@ source $DESTDIR/$VIRTUAL_ENV/bin/activate || die "couldn't activate virtualenv"
 
 tar xvf $A -C $BUILDDIR || die "source tar extract fail"
 
-cp $REQUIREMENTS $BUILDDIR/requirements.txt
-export BUNDLED_ARCHIVES="$( grep '^inst/' $BUILDDIR/requirements.txt)"
+cp $ORIG_DIR/requirements_bundled.txt $BUILDDIR/requirements_bundled.txt
+export BUNDLED_ARCHIVES="$(cat $BUILDDIR/requirements_bundled.txt)"
 
 # patch some packages. this creates new archives in Build/ containing our patches, based on originals in /Build/inst/externallibs:
 ./patch.sh $SRCDIR $BUNDLED_ARCHIVES || die "patch fail" 
 
 # copy other pip requirements into their expected location in Build/
 cp -a $INSTDIR/icmpecho $BUILDDIR/ || die "icmpecho fail"
+if [ -e $ORIG_DIR/patches/venv.patch ]; then
+	cp $ORIG_DIR/patches/venv.patch $INSTDIR/icmpecho/venv.patch || die "venv patch copy fail"
+	( cd $INSTDIR/icmpecho; patch -p1 < venv.patch ) || die "venv patch fail"
+fi
+
 # no patches for this since we maintain it:
 cp -a $INSTDIR/externallibs/zenpacksupport*.tar.gz $BUILDDIR/ || die "zenpacksupport fail"
 cp -a $INSTDIR/externallibs/ZSI*.tar.gz $BUILDDIR/ || die "zenpacksupport fail"
 # These requirements will now be found by our requirements.txt file, which we will finalize now:
 
 # Automatically determine versions of python dependencies bundled with Zenoss source and update requirements.txt to build these versions:
-sed -e "/^\inst/d" $BUILDDIR/requirements.txt > $BUILDDIR/requirements.txt.autodetect
+touch $BUILDDIR/requirements_bundled.txt.autodetect
 # now iteratively add auto-detected versions:
-for line in $(grep "^inst/" $BUILDDIR/requirements.txt); do
+for line in $(grep "^inst/" $BUILDDIR/requirements_bundled.txt); do
 	line="$(ls -d $SRCDIR/$line)"
 	[ ! -e "$line" ] && die "Can't find $line. Exiting."
-	echo $line >> $BUILDDIR/requirements.txt.autodetect
+	echo $line >> $BUILDDIR/requirements_bundled.txt.autodetect
 done
 
+export DISTDIR=$ORIG_DIR/downloads
+#install -d $DISTDIR/pip_distfiles
+#git clone git://github.com/wolever/pip2pi.git $BUILDDIR/pip2pi || die "pip2pi clone fail"
+
+# set up local pip repository
+#$BUILDDIR/pip2pi/pip2tgz $DISTDIR/pip_distfiles -r $ORIG_DIR/requirements_pypi.txt || die
+#$BUILDDIR/pip2pi/pip2tgz $DISTDIR/pip_distfiles -r $BUILDDIR/requirements_bundled.txt.autodetect || die
+#$BUILDDIR/pip2pi/dir2pi $DISTDIR/pip_distfiles || die
+
 # Now, use pip to build all python parts:
-pip install -r $BUILDDIR/requirements.txt.autodetect || die "pip failure"
+#install -d $DISTDIR/pip_distfiles
+pip install --index-url=file:///$DISTDIR/pip_distfiles/simple/ -r $ORIG_DIR/requirements_pypi.txt || die "pip pypi fail"
+pip install --index-url=file:///$DISTDIR/pip_distfiles/simple/ -r $BUILDDIR/requirements_bundled.txt.autodetect || die "pip bundled fail" 
 
 # Reactivate the virtual environment to update the PATH
 source $DESTDIR/$VIRTUAL_ENV/bin/activate || die "activate fail"
@@ -131,8 +142,7 @@ then
     cp $INSTDIR/conf/global.conf $DESTDIR/$ZENHOME/etc/ || die "global.conf copy fail"
 fi
 
-cd $INSTDIR/conf || die "conf cd fail"
-for conf in *
+for conf in $(cd $INSTDIR/conf; ls)
 do  
     if [ ! -f $DESTDIR/$ZENHOME/etc/$conf ]
     then
@@ -141,37 +151,26 @@ do
     fi
 done
 
-# Copy in the skel files?
-# Compile protocol buffers
-# This tool is only required if we are going to compile them on our own.
+# protoc is required by the java build parts:
 if [ ! -e $DESTDIR/$ZENHOME/bin/protoc ]
 then
-    cd $BUILDDIR
-    tar xvf protobuf*tar* || die "protobuf extract fail"
-    cd protobuf*
-    ./configure --prefix=$ZENHOME --enable-shared=yes --enable-static=no || die "protobuf configure fail"
-    make ${MAKEOPTS} || die "protobuf build fail"
-    make DESTDIR=$DESTDIR install || die "protobuf install fail"
-# TODO: CHECK SETUP.PY INSTALL::::
-    cd python/
-    $PYTHON setup.py install || die "protobuf python install fail"
+	./patch.sh . $( ls $SRCDIR/inst/externallibs/protobuf*.tar.*)  || die "patch protobuf fail"
+	cd $BUILDDIR; tar xvf protobuf*tar* || die "protobuf extract fail"
+	cd protobuf*
+	./configure --prefix=$ZENHOME --enable-shared=yes --enable-static=no || die "protobuf configure fail"
+	make ${MAKEOPTS} || die "protobuf build fail"
+	make DESTDIR=$DESTDIR install || die "protobuf install fail"
+	cd python/
+	$PYTHON setup.py install || die "protobuf python install fail"
+	cd $ORIG_DIR
 fi
 
 #Make zensocket
 #$ZENHOME is provided as part of the virtualenv environment and so thats how this knows where to go.
 cd $INSTDIR/zensocket
 make ${MAKEOPTS} || die "zensocket build fail"
-
 # TODO: NEED TO CHECK THIS DESTDIR:
 make DESTDIR=$DESTDIR install || "zensocket install fail"
-
-#Make pyraw
-# We need to patch this to make it venv aware.
-if [ ! -f $INSTDIR/icmpecho/venv.patch ]
-then
-    cp $ORIG_DIR/patches/venv.patch $INSTDIR/icmpecho/venv.patch || die "venv patch copy fail"
-    ( cd $INSTDIR/icmpecho; patch -p1 < venv.patch ) || die "venv patch fail"
-fi
 
 cd $INSTDIR/icmpecho
 make VIRTUAL_ENV=/venv/ DESTDIR=$DESTDIR ${MAKEOPTS} || die "icmpecho fail"
@@ -189,6 +188,7 @@ then
     ./configure --prefix=$ZENHOME --without-zenmap --without-ndiff || die "nmap configure fail"
     make ${MAKEOPTS} || die "nmap build fail"
     make DESTDIR=$DESTDIR install || die "nmap install fail"
+    cd $ORIG_DIR
 fi
 
 install -d $DESTDIR/$ZENHOME/share/mibs/site || die "mibs/site mkdir fail"
@@ -207,6 +207,7 @@ then
     ./configure --prefix=$ZENHOME || die "libsmi configure fail"
     make ${MAKEOPTS} || die "libsmi build fail"
     make DESTDIR=$DESTDIR install || die "libsmi install fail"
+    cd $ORIG_DIR
 fi
 
 ##### mvn/oracle dependancies below ####
@@ -226,7 +227,6 @@ $PYTHON setup.py --distribute install | die "python protocol install fail"
 #compile zep
 try cd $SRCDIR/zep
 PATH=$DESTDIR/$ZENHOME/bin/:${PATH} LD_LIBRARY_PATH=$DESTDIR/$ZENHOME/lib mvn $MVN_OPTS clean install || die "zep build fail"
-
 #Install zep
 ZEPDIST=$(ls -1 $SRCDIR/zep/dist/target/zep-dist-*.tar.gz)
 (cd $DESTDIR/$ZENHOME;tar zxvhf $ZEPDIST) || die "zepdist extract fail"
