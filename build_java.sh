@@ -49,6 +49,11 @@ cp $INSTDIR/externallibs/$i $DESTDIR/$ZENHOME || die "license $i fail"
 done
 cp $INSTDIR/License.zenoss $DESTDIR/$ZENHOME || die "license fail"
 
+# This is so maven and the python protocol install part can find both
+# the "protoc" command as well as the libprotobuf shared library:
+export PATH=$DESTDIR/$ZENHOME/bin:$PATH
+export LD_LIBRARY_PATH=$DESTDIR/$ZENHOME/lib
+
 ##### mvn/oracle dependancies below ####
 # Compile the java pieces
 MVN_REPO=$BUILDDIR/maven_repo
@@ -56,13 +61,14 @@ install -d $MVN_REPO
 MVN_OPTS="-Dmaven.repo.local=$MVN_REPO"
 cd $SRCDIR/java/
 mvn $MVN_OPTS clean install || die "core java build fail"
+
 # Compile the protocols
 cd $SRCDIR/protocols/
-PATH=$DESTDIR/$ZENHOME/bin/:${PATH} LD_LIBRARY_PATH=$DESTDIR/$ZENHOME/lib mvn $MVN_OPTS -f java/pom.xml clean install || die "java protocol build fail"
+mvn $MVN_OPTS -f java/pom.xml clean install || die "java protocol build fail"
 
 #compile zep
 try cd $SRCDIR/zep
-PATH=$DESTDIR/$ZENHOME/bin/:${PATH} LD_LIBRARY_PATH=$DESTDIR/$ZENHOME/lib mvn $MVN_OPTS clean install || die "zep build fail"
+mvn $MVN_OPTS clean install || die "zep build fail"
 
 #Install zep
 ZEPDIST=$(ls -1 $SRCDIR/zep/dist/target/zep-dist-*.tar.gz)

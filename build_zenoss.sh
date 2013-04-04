@@ -146,15 +146,15 @@ for conf in $(cd $INSTDIR/conf; ls)
 do  
     if [ ! -f $DESTDIR/$ZENHOME/etc/$conf ]
     then
-        cp $conf $DESTDIR/$ZENHOME/etc/$conf
-        sed -i -e 's/ZENUSERNAME/$(ZOPEUSER)/' -e 's/ZENPASSWORD/$(ZOPEPASSWORD)/' $DESTDIR/$ZENHOME/etc/$conf || die "$conf fail"
+        cp $INSTDIR/conf/$conf $DESTDIR/$ZENHOME/etc/$conf
+        sed -i -e 's/ZENUSERNAME/$(ZOPEUSER)/' -e 's/ZENPASSWORD/$(ZOPEPASSWORD)/' $DESTDIR/$ZENHOME/etc/$conf || die "sed config $conf fail"
     fi
 done
 
 # protoc is required by the java build parts:
 if [ ! -e $DESTDIR/$ZENHOME/bin/protoc ]
 then
-	./patch.sh . $( ls $SRCDIR/inst/externallibs/protobuf*.tar.*)  || die "patch protobuf fail"
+	./patch.sh $SRCDIR/inst/externallibs "protobuf*.tar.*" || die "patch protobuf fail"
 	cd $BUILDDIR; tar xvf protobuf*tar* || die "protobuf extract fail"
 	cd protobuf*
 	./configure --prefix=$ZENHOME --enable-shared=yes --enable-static=no || die "protobuf configure fail"
@@ -210,6 +210,11 @@ then
     cd $ORIG_DIR
 fi
 
+# This is so maven and the python protocol install part can find both
+# the "protoc" command as well as the libprotobuf shared library:
+export PATH=$DESTDIR/$ZENHOME/bin:$PATH
+export LD_LIBRARY_PATH=$DESTDIR/$ZENHOME/lib
+
 ##### mvn/oracle dependancies below ####
 # Compile the java pieces
 MVN_REPO=$BUILDDIR/maven_repo
@@ -219,14 +224,15 @@ cd $SRCDIR/java/
 mvn $MVN_OPTS clean install || die "core java build fail"
 # Compile the protocols
 cd $SRCDIR/protocols/
-PATH=$DESTDIR/$ZENHOME/bin/:${PATH} LD_LIBRARY_PATH=$DESTDIR/$ZENHOME/lib mvn $MVN_OPTS -f java/pom.xml clean install || die "java protocol build fail"
-PATH=$DESTDIR/$ZENHOME/bin/:${PATH} LD_LIBRARY_PATH=$DESTDIR/$ZENHOME/lib make -C python clean build || die "python protocol build fail"
+mvn $MVN_OPTS -f java/pom.xml clean install || die "java protocol build fail"
+make -C python clean build || die "python protocol build fail"
 cd python/
-$PYTHON setup.py --distribute install | die "python protocol install fail"
+# This following line needs protoc in path too:
+$PYTHON setup.py install || die "python protocol install fail"
 
 #compile zep
 try cd $SRCDIR/zep
-PATH=$DESTDIR/$ZENHOME/bin/:${PATH} LD_LIBRARY_PATH=$DESTDIR/$ZENHOME/lib mvn $MVN_OPTS clean install || die "zep build fail"
+LD_LIBRARY_PATH=$DESTDIR/$ZENHOME/lib mvn $MVN_OPTS clean install || die "zep build fail"
 #Install zep
 ZEPDIST=$(ls -1 $SRCDIR/zep/dist/target/zep-dist-*.tar.gz)
 (cd $DESTDIR/$ZENHOME;tar zxvhf $ZEPDIST) || die "zepdist extract fail"
