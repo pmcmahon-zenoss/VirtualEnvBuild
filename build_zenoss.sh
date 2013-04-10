@@ -232,7 +232,7 @@ $PYTHON setup.py install || die "python protocol install fail"
 
 #compile zep
 try cd $SRCDIR/zep
-LD_LIBRARY_PATH=$DESTDIR/$ZENHOME/lib mvn $MVN_OPTS clean install || die "zep build fail"
+mvn $MVN_OPTS clean install || die "zep build fail"
 #Install zep
 ZEPDIST=$(ls -1 $SRCDIR/zep/dist/target/zep-dist-*.tar.gz)
 (cd $DESTDIR/$ZENHOME;tar zxvhf $ZEPDIST) || die "zepdist extract fail"
