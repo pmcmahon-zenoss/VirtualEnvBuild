@@ -49,7 +49,7 @@ mkdir -p $DESTDIR/$VIRTUAL_ENV || die "Couldn't create $VIRTUAL_ENV"
 if [ ! -e $DESTDIR/$VIRTUAL_ENV/bin/activate ]
 then
 try mkdir -p $DESTDIR/$VIRTUAL_ENV
-virtualenv-$PYTHON_VERSION --distribute $DESTDIR/$VIRTUAL_ENV || die "virtualenv fail"
+virtualenv-$PYTHON_VERSION --relocatable --distribute $DESTDIR/$VIRTUAL_ENV || die "virtualenv fail"
 fi
 
 #Change the paths and add a ZENHOME env variable:
@@ -244,6 +244,9 @@ JSBUILDER=$BUILDDIR/JSBuilder2.jar DESTDIR=$DESTDIR ZENHOME=$ZENHOME $INSTDIR/bu
 
 echo "Setting permissions..."
 chown -R zenoss:zenoss $DESTDIR/$ZENHOME || die "Couldn't set permissions"
+
+#Finish making virtualenv relocatable 
+virtualenv-$PYTHON_VERSION --relocatable --distribute $DESTDIR/$VIRTUAL_ENV || die "virtualenv fail"
 
 # Maven does some nasty things with permissions. This is to fix that:
 find $DESTDIR/$ZENHOME -type d -exec chmod 0775 {} \; || die "dir perm fix"
