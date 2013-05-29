@@ -49,6 +49,7 @@ mkdir -p $DESTDIR/$VIRTUAL_ENV || die "Couldn't create $VIRTUAL_ENV"
 if [ ! -e $DESTDIR/$VIRTUAL_ENV/bin/activate ]
 then
 try mkdir -p $DESTDIR/$VIRTUAL_ENV
+virtualenv-$PYTHON_VERSION --distribute $DESTDIR/$VIRTUAL_ENV || die "virtualenv fail"
 virtualenv-$PYTHON_VERSION --relocatable --distribute $DESTDIR/$VIRTUAL_ENV || die "virtualenv fail"
 fi
 
