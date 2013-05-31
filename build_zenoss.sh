@@ -177,7 +177,7 @@ cd $INSTDIR/icmpecho
 make VIRTUAL_ENV=/venv/ DESTDIR=$DESTDIR ${MAKEOPTS} || die "icmpecho fail"
 
 # fix the python path by finding the virtualenv python in the path right now, hard-code it into zenfunctions:
-sed -i -e 's|PYTHON=$ZENHOME/bin/python|PYTHON='`which $PYTHON`'|g' $DESTDIR/$ZENHOME/bin/zenfunctions || die "python path fix fail"
+sed -i -e 's|PYTHON=$ZENHOME/bin/python|PYTHON='$VIRTUAL_ENV/bin/python'|g' $DESTDIR/$ZENHOME/bin/zenfunctions || die "python path fix fail"
 # TODO: add zendmd fix.
 
 # build nmap, because we need it in the code and we set it setuid
