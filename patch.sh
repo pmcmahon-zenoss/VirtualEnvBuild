@@ -45,6 +45,7 @@ compress() {
   then
     die "  Usage: compress [COMPRESSED_FILENAME] [SOURCE_DIRECTORY]"
   else
+    echo "Compressing to $1"
     case $1 in
       *.tar.bz2)    try tar -cjPf $1 $2 ;;
       *.tar.gz)     try tar -czPf $1 $2 ;;

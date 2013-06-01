@@ -104,7 +104,7 @@ export DISTDIR=$ORIG_DIR/downloads
 
 # Now, use pip to build all python parts:
 #install -d $DISTDIR/pip_distfiles
-pip install --use-mirrors --index-url=file:///$DISTDIR/pip_distfiles/simple/ -r $BUILDDIR/requirements_bundled.txt.autodetect || die "pip install fail" 
+pip install --use-mirrors --download-cache=$DISTDIR/pip_distfiles  -r $BUILDDIR/requirements_bundled.txt.autodetect || die "pip install fail" 
 #pip install --use-mirrors --index-url=file:///$DISTDIR/pip_distfiles/simple/ -r $ORIG_DIR/requirements_pypi.txt || die "pip pypi fail"
 
 # Reactivate the virtual environment to update the PATH
