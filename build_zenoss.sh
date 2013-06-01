@@ -89,7 +89,7 @@ touch $BUILDDIR/requirements_bundled.txt.autodetect
 for line in $(grep "^inst/" $BUILDDIR/requirements_bundled.txt); do
 	line="$(ls -d $SRCDIR/$line)"
 	[ ! -e "$line" ] && die "Can't find $line. Exiting."
-	echo $line >> $BUILDDIR/requirements_bundled.txt.autodetect
+	echo file:$line >> $BUILDDIR/requirements_bundled.txt.autodetect
 done
 
 export DISTDIR=$ORIG_DIR/downloads
