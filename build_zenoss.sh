@@ -85,12 +85,14 @@ cp -a $INSTDIR/externallibs/ZSI*.tar.gz $BUILDDIR/ || die "zenpacksupport fail"
 
 # Automatically determine versions of python dependencies bundled with Zenoss source and update requirements.txt to build these versions:
 touch $BUILDDIR/requirements_bundled.txt.autodetect
-cat $ORIG_DIR/requirements_pypi.txt >> $BUILDDIR/requirements_bundled.txt.autodetect
+
 # now iteratively add auto-detected versions:
 for line in $(grep "^inst/" $BUILDDIR/requirements_bundled.txt); do
 	line="$(ls -d $SRCDIR/$line)"
 	[ ! -e "$line" ] && die "Can't find $line. Exiting."
-	echo file:$line >> $BUILDDIR/requirements_bundled.txt.autodetect
+    filename=$(basename "$line")
+	[ ! -e "$BUILDDIR/$filename" ] && die "Can't find $BUILDDIR/$filename. Exiting."
+	echo file:$BUILDDIR/$filename >> $BUILDDIR/requirements_bundled.txt.autodetect
 done
 
 export DISTDIR=$ORIG_DIR/downloads
@@ -105,7 +107,7 @@ export DISTDIR=$ORIG_DIR/downloads
 # Now, use pip to build all python parts:
 #install -d $DISTDIR/pip_distfiles
 pip install --use-mirrors --download-cache=$DISTDIR/pip_distfiles  -r $BUILDDIR/requirements_bundled.txt.autodetect || die "pip install fail" 
-#pip install --use-mirrors --index-url=file:///$DISTDIR/pip_distfiles/simple/ -r $ORIG_DIR/requirements_pypi.txt || die "pip pypi fail"
+pip install --use-mirrors --index-url=file:///$DISTDIR/pip_distfiles/simple/ -r $ORIG_DIR/requirements_pypi.txt || die "pip pypi fail"
 
 # Reactivate the virtual environment to update the PATH
 source $DESTDIR/$VIRTUAL_ENV/bin/activate || die "activate fail"
